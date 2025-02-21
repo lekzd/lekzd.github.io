@@ -1,0 +1,281 @@
+:root {
+  --color_white: #ffffff;
+}
+
+body[theme=dark] {
+  --color_grey: #777;
+  --color_green: #00b1c8;
+  --color_red: #eb0567;
+  --color_blue: #195ecd;
+  --color_violet: #5c1372;
+  --color_yellow: #ffbe00;
+  --color_header: deeppink;
+  --color_comment: var(--color_grey);
+  --color_bg: #000;
+  --color_fg: var(--color_white);
+  --color_bg_invert: #fff;
+  --color_fg_invert: #FAFAFA;
+}
+
+body[theme=github] {
+  --color_grey: #969896;
+  --color_green: #589353;
+  --color_red: #A71D5D;
+  --color_blue: #183691;
+  --color_violet: #795DA3;
+  --color_yellow: #ffbe00;
+  --color_header: #A71D5D;
+  --color_comment: var(--color_grey);
+  --color_bg: var(--color_white);
+  --color_fg: #1A1A1A;
+  --color_bg_invert: #000;
+  --color_fg_invert: #FAFAFA;
+}
+
+body[theme=solarized] {
+  --color_grey: #747a81;
+  --color_green: #4d5f29;
+  --color_red: #b73f29;
+  --color_blue: #2c68a7;
+  --color_violet: #795DA3;
+  --color_yellow: #d48925;
+  --color_header: var(--color_red);
+  --color_comment: var(--color_grey);
+  --color_bg: #e0dcc7;
+  --color_fg: #1a2724;
+  --color_bg_invert: #000;
+  --color_fg_invert: #e0dcc7;
+}
+
+.slide {
+  background: var(--color_bg);
+  color: var(--color_fg);
+  font-family: 'Fira Code', sans-serif;
+  /* filter: invert(); */
+}
+
+.slide pre code:not(:only-child).mark {
+  background-color: var(--color_violet);
+}
+
+.slide img:not(.cover):not([height]):not([width]) {
+  max-height: 500px;
+  max-width: 100%;
+  height: auto;
+}
+
+.slide h2 {
+  font-family: 'Fira Code', sans-serif;
+  font-weight: 400;
+  color: var(--color_header);
+}
+
+.slide h3 {
+  font-family: 'Fira Code', sans-serif;
+  font-weight: 600;
+  color: var(--color_header);
+}
+
+.slide code, .slide kbd, .slide samp {
+  font-family: 'Fira Code', sans-serif;
+}
+
+.slide mark {
+  background: var(--color_violet);
+  color: var(--color_white);
+}
+
+video:not(.no-auto) {
+  object-fit: fill;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.black-bg {
+  background: var(--color_bg_invert);
+  padding: 0.1em 0.3em;
+}
+
+.black {
+  color: var(--color_fg);
+}
+
+.white {
+  color: var(--color_white);
+}
+
+.yellow {
+  color: var(--color_yellow);
+}
+
+.blue {
+  color: var(--color_blue);
+}
+
+.green {
+  color: var(--color_green);
+}
+
+.red {
+  color: var(--color_red);
+}
+
+.grey {
+  color: var(--color_grey);
+}
+
+ul.blank {
+  list-style-type: none;
+}
+
+.commented {
+  color: var(--color_comment)!important;
+}
+
+.commented:before {
+  content: '// '!important;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.mr-50 {
+  margin-right: 50px;
+}
+
+.ml-50 {
+  margin-left: 50px;
+}
+
+.mb-50 {
+  margin-bottom: 50px;
+}
+
+.w-45 {
+  width: 45%;
+}
+
+.w-33 {
+  width: 33%;
+}
+
+.double_line {
+  line-height: 2!important;
+}
+
+.size_24 {
+  font-size: 24px;
+}
+
+.size_28 {
+  font-size: 28px;
+}
+
+.size_32 {
+  font-size: 32px;
+}
+
+.size_36 {
+  font-size: 36px;
+}
+
+.size_40 {
+  font-size: 40px;
+}
+
+.size_60 {
+  font-size: 60px!important;
+}
+
+.size_80 {
+  font-size: 80px!important;
+}
+
+.hljs {
+  padding: 0 0 0 var(--slide-side);
+}
+
+.progress:before {
+  background-color: var(--color_violet);
+}
+
+.slide ol, .slide ul {
+  margin-bottom: 0;
+}
+
+.slide.no-number::after {
+  opacity: 0;
+}
+
+@keyframes rabbits {
+  from { background-position-y: 0; }
+  to { background-position-y: -70px; }
+}
+
+.slide-cover {
+  background: var(--color_bg);
+  background-image: url(./pictures/background.png);
+  background-size: contain;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.messenger {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: #fff;
+  padding: 6px;
+}
+
+.message {
+  padding: 16px 32px;
+  border-radius: 8px;
+  background: #daebed;
+}
+
+.message.my {
+  align-self: flex-end;
+  background: #bad0e6;
+}
+
+.message + .message {
+  margin-top: 6px;
+}
+
+.messenger-header {
+  background: #daebed;
+  width: 100%;
+  margin-bottom: 10px;
+  font-weight: bold;
+  padding: 16px 32px;
+  box-sizing: border-box;
+}

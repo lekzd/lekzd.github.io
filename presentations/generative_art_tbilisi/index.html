@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Generative Art with JS</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./fonts/fira_code.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.css">
+    <link rel="stylesheet" href="node_modules/@shower/ribbon/styles/styles.css">
+    <link rel="stylesheet" href="./styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+    <style>
+        .shower {
+            --slide-ratio: calc(16 / 9);
+        }
+
+        .title-shadow {
+            text-shadow: 
+                3px 0px 2px black,
+                3px 3px 2px black,
+                0px 3px 2px black,
+                -3px 3px 2px black,
+                -3px 0px 2px black,
+                -3px -3px 2px black,
+                0px -3px 2px black,
+                3px -3px 2px black;
+        }
+
+    </style>
+</head>
+
+<body class="shower list" theme="dark">
+
+    <header class="caption">
+        <h1>Generative Art with JS</h1>
+    </header>
+
+    <section class="slide slide-cover">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/cover.mp4" type="video/mp4">
+        </video>
+        <br>
+        <br>
+        <div class="text-center title-shadow size_60">
+            <span class="text-white">Generative Art <br/> on JS</span>
+        </div>
+    </section>
+
+    <section class="slide">
+        <br>
+        <div class="flex-row align-center">
+            <div class="mr-50">
+                <img src="./pictures/me_small.png" alt="">
+            </div>
+            <div class="ml-50">
+                <h2 class="">Aleksandr Korotaev</h2>
+                <ul class="blank size_24">
+                    <li class="commented next">Saint Petersburg</li>
+                    <li class="commented next">love conferences</li>
+                    <li class="yellow next">speaking for 7 years</li>
+                    <li class="yellow next">searching speakers for 5 years</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <h2>So, looking for speakers</h2>
+        <ul class="size_36">
+            <li>Searching chats</li>
+            <li class="next">Searching communities</li>
+            <li class="next">Found <a href="https://t.me/gen_c">GenClub</a></li>
+            <li class="next">Participated in <a href="https://genuary.art/">Genuary</a></li>
+        </ul>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/genuary.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_1.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_2.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_7.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_11_watercolor.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_11.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_12.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_19.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_22.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_24.mp4" type="video/mp4">
+        </video>
+    </section>
+    
+    <section class="slide">
+        <h2>Want more artists?</h2>
+        <ul class="size_36">
+            <li><a href="https://codepen.io">codepen.io</a></li>
+            <li><a href="https://x.com">X.com</a></li>
+            <li><a href="https://bsky.app">bsky.app</a></li>
+        </ul>
+        <p class="size_36 red">
+            #creativeCoding #generativeArt <br/>
+            #generative #genArtClub
+        </p>
+    </section>
+
+    <section class="slide">
+        <h2>NFT-like marketplaces</h2>
+        <ul class="size_36">
+            <li><a href="https://fxhash.xyz">fxhash.xyz</a></li>
+            <li><a href="https://rodeo.club">rodeo.club</a></li>
+            <li><a href="https://artblocks.io">artblocks.io</a></li>
+        </ul>
+    </section>
+
+    <section class="slide">
+        <h2>Where to start</h2>
+        <ul class="size_36">
+            <li><a href="https://codepen.io">codepen.io</a></li>
+            <li><a href="https://shadertoy.com/new">shadertoy.com/new</a></li>
+            <li><a href="https://editor.p5js.org">editor.p5js.org</a></li>
+        </ul>
+    </section>
+
+    <section class="slide slide-cover">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/cover.mp4" type="video/mp4">
+        </video>
+        <br>
+        <br>
+        <br>
+        <div class="text-center title-shadow size_60">
+            <span class="text-white">Algorithms</span>
+        </div>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow">Sine Waves</h2>
+        <div class="text-center title-shadow">part 1 <span class="grey">/ 5</span></div>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/rotating_circles.gif" alt="" class="cover">
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <br>
+        <pre class="javascript size_36">
+            <code>const x = cx + r * Math.cos(a)</code>
+            <code>const y = cy + r * Math.sin(a)</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/sine_chart.webp" alt="" class="cover">
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <br>
+        <pre class="javascript size_36">
+            <code>const y = Math.sin(x)</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_13.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <br>
+        <pre class="javascript size_36">
+            <code>const colorIndex = Math.cos(x + time)</code>
+            <code>    + Math.sin(y + time)</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/genuary_15.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_14.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <br>
+        <pre class="javascript size_36">
+            <code>const y = Math.sin(time / K)</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_12.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/sin_spinner.gif" alt="" class="cover" style="filter: invert(1);">
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <pre class="javascript size_36">
+            <code>const y1 = Math.sin(time + shift * 1)</code>
+            <code>const y2 = Math.sin(time + shift * 2)</code>
+            <code>const y3 = Math.sin(time + shift * 3)</code>
+        </pre>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow">Interpolation</h2>
+        <div class="text-center title-shadow">part 2 <span class="grey">/ 5</span></div>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/interpolation_anim.gif" alt="" class="cover" style="filter: invert(1);">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/interpolation_1.png" alt="" class="cover" style="filter: invert(1);">
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <br>
+        <div class="text-center size_36">
+            <span class="red">L</span>inear int<span class="red">ERP</span>olation.
+        </div>
+        <div class="text-center size_36">
+            [x, y] = lerp(time)
+        </div>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_5.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <br>
+        <pre class="javascript">
+            <code>const [left, top] = toIsometric(x, y)</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_20.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <pre class="javascript">
+            <code>const toIsometric = (x, y) => [x, y]</code>
+            <code> </code>
+            <code>const [left, top] = toIsometric(x, y)</code>
+            <code>const levels = maxTop * (Math.sin(time) + 1) / 2</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/scroll-animation.gif" alt="" class="cover">
+    </section>
+
+    <section class="slide slide-cover">
+        <h2>Some Basics</h2>
+        <ul class="size_36">
+            <li>Numbers should be normalized to 0-1</li>
+            <li>Learn several functions</li>
+            <li>Add scroll event handler</li>
+        </ul>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <pre class="javascript">
+            <code>const lerp = (x, y, a) => x * (1 - a) + y * a</code>
+            <code> </code>
+            <code>lerp(20, 80, 0)   // 20</code>
+            <code>lerp(20, 80, 1)   // 80</code>
+            <code>lerp(20, 80, 0.5) // 50</code>
+        </pre>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <pre class="javascript">
+            <code>const clamp = (a, min = 0, max = 1) => </code>
+            <code>    Math.min(max, Math.max(min, a))</code>
+            <code> </code>
+            <code>clamp(24, 20, 30) // 24</code>
+            <code>clamp(12, 20, 30) // 20</code>
+            <code>clamp(32, 20, 30) // 30</code>
+        </pre>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <pre class="javascript">
+            <code>const invlerp = (x, y, a) => clamp((a - x) / (y - x))</code>
+            <code> </code>
+            <code>invlerp(50, 100, 75)  // 0.5</code>
+            <code>invlerp(50, 100, 25)  // 0</code>
+            <code>invlerp(50, 100, 125) // 1</code>
+        </pre>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <pre class="javascript">
+            <code>const progress = invlerp(</code>
+            <code>    screenTop, </code>
+            <code>    screenBottom, </code>
+            <code>    window.scrollY</code>
+            <code>)</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <br>
+        <div class="text-center size_36">
+            <a href="https://easings.net/">easings.net</a>
+        </div>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/easings.png" alt="" class="cover">
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow">Distribution</h2>
+        <div class="text-center title-shadow">part 3 <span class="grey">/ 5</span></div>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_16.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <div class="text-center size_24">
+            <a href="https://en.wikipedia.org/wiki/Wallpaper_group">
+                https://en.wikipedia.org/wiki/Wallpaper_group
+            </a>
+        </div>
+        <br>
+        <div class="text-center size_24">
+            <img src="./pictures/wiki_p4.png" alt="">
+        </div>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_28.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/hexes.png" alt="" class="cover" style="filter: invert(1);">
+        <img src="./pictures/truchet_hexes.svg" alt="" class="cover" style="background-color: #000000AA;">
+    </section>
+
+    <section class="slide slide-cover">
+        <h2>Some Basics</h2>
+        <ul class="size_36">
+            <li>Grids</li>
+            <li>Nested grids (trees)</li>
+            <li>Spatial partitioning</li>
+            <li>Quadtree</li>
+            <li>Octree</li>
+        </ul>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/clusters.png" alt="" class="cover" style="filter: invert(1);">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/scatter-chart-change-color-on-click-1200x720.png" alt="" class="cover" style="filter: invert(1);">
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/stranger_1.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/stranger_2.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow">Noise</h2>
+        <div class="text-center title-shadow">part 4 <span class="grey">/ 5</span></div>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/pngtree-noise-abstract-texture-dark-gray-noise-background-image_879896.jpg" alt="" class="cover">
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <br>
+        <pre class="javascript">
+            <code>const g = Math.random()</code>
+            <code>const color = `rgb(${g * 255}, ${g * 255}, ${g * 255})`</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_9.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <pre class="javascript">
+            <code>function pseudoRandom(seed) {</code>
+            <code>    return Math.sin(seed) * 10000</code>
+            <code>      - Math.floor(Math.sin(seed) * 10000)</code>
+            <code>}</code>
+            <code>function noise(x, y) {</code>
+            <code>    const seed = x * 137 + y * 149</code>
+            <code>    return pseudoRandom(seed) % 1</code>
+            <code>}</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_6.mp4" type="video/mp4">
+        </video>
+    </section>
+
+
+    <section class="slide slide-cover">
+        <h2>Some Basics</h2>
+        <ul class="size_36">
+            <li>Perlin noise</li>
+            <li>Simplex noise</li>
+        </ul>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/perlin_1.jpg" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/perlin_2.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/perlin_3.png" alt="" class="cover">
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow">Free Artists</h2>
+        <div class="text-center title-shadow">part 5 <span class="grey">/ 5</span></div>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_13_monalisa.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <br>
+        <pre class="javascript size_36">
+            <code>x += Math.sin(Math.random()) * distance</code>
+            <code>y += Math.sin(Math.random()) * distance</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/genuary_27.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <h2>Some Basics</h2>
+        <ul class="size_36">
+            <li>Random walkers</li>
+            <li>Cellular automata</li>
+        </ul>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/celular_1.gif" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/celular_2.gif" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/celular_3.gif" alt="" class="cover">
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80">Key takeaways</h2>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <br>
+        <div class="text-center size_60">🤘 Try it!</div>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <br>
+        <div class="text-center size_60">🤔 Ask questions!</div>
+    </section>
+
+    <section class="slide slide-cover">
+        <div class="flex-row justify-center" style="gap: 100px;">
+            <div>
+                <img src="./pictures/channel_link.png" alt="">
+            </div>
+            <div>
+                <h2 class="text-center">Slides</h2>
+                <img width="300" height="300" style="background-color: #ffffff; padding: 20px; border-radius: 25px;" src="./pictures/qr.svg" alt="">
+            </div>
+        </div>
+    </section>
+
+    <footer class="badge">
+        <a href="https://github.com/shower/shower">Fork me on GitHub</a>
+    </footer>
+
+    <div class="progress"></div>
+
+    <script src="node_modules/@shower/core/dist/shower.js"></script>
+    <!-- Copyright © 2020 Yours Truly, Famous Inc. -->
+
+    <script>
+        hljs.highlightAll();
+    </script>
+
+</body>
+
+</html>
