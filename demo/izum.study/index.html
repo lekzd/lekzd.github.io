@@ -1,0 +1,1032 @@
+<html>
+  <head>
+    <title>IZUM.STUDY</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.161.0/build/three.module.min.js",
+          "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+        }
+      }
+    </script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-y: overlay;
+      }
+      body {
+        background: #000;
+        color: #fff;
+      }
+
+      #canvas {
+        position: fixed;
+        z-index: -1;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script lang="glsl" type="fragment" id="snoise4">
+      //	Simplex 4D Noise
+      //	by Ian McEwan, Ashima Arts
+      //
+      vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x,289.0);}
+      float permute(float x){return floor(mod(((x*34.0)+1.0)*x,289.0));}
+      vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
+      float taylorInvSqrt(float r){return 1.79284291400159 - 0.85373472095314 * r;}
+      vec4 grad4(float j, vec4 ip){
+        const vec4 ones = vec4(1.0,1.0,1.0,-1.0);
+        vec4 p,s;
+        p.xyz = floor(fract(vec3(j)*ip.xyz)*7.0)*ip.z - 1.0;
+        p.w   = 1.5 - dot(abs(p.xyz), ones.xyz);
+        s     = vec4(lessThan(p, vec4(0.0)));
+        p.xyz = p.xyz + (s.xyz*2.0 - 1.0)*s.www;
+        return p;
+      }
+      float snoise4(vec4 v){
+        const vec2 C = vec2(0.138196601125010504, 0.309016994374947451);
+        vec4 i = floor(v + dot(v, C.yyyy));
+        vec4 x0 = v - i + dot(i, C.xxxx);
+        vec4 i0;
+        vec3 isX  = step(x0.yzw, x0.xxx);
+        vec3 isYZ = step(x0.zww, x0.yyz);
+        i0.x = isX.x + isX.y + isX.z;
+        i0.yzw = 1.0 - isX;
+        i0.y += isYZ.x + isYZ.y;
+        i0.zw += 1.0 - isYZ.xy;
+        i0.z += isYZ.z;
+        i0.w += 1.0 - isYZ.z;
+        vec4 i3 = clamp(i0, 0.0, 1.0);
+        vec4 i2 = clamp(i0 - 1.0, 0.0, 1.0);
+        vec4 i1 = clamp(i0 - 2.0, 0.0, 1.0);
+        vec4 x1 = x0 - i1 + C.xxxx;
+        vec4 x2 = x0 - i2 + C.xxxx*2.0;
+        vec4 x3 = x0 - i3 + C.xxxx*3.0;
+        vec4 x4 = x0 - 1.0 + C.xxxx*4.0;
+        i = mod(i, 289.0);
+        float j0 = permute(permute(permute(permute(i.w)+i.z)+i.y)+i.x);
+        vec4 j1 = permute(permute(permute(permute(
+          i.w + vec4(i1.w,i2.w,i3.w,1.0)) +
+          i.z + vec4(i1.z,i2.z,i3.z,1.0)) +
+          i.y + vec4(i1.y,i2.y,i3.y,1.0)) +
+          i.x + vec4(i1.x,i2.x,i3.x,1.0));
+        vec4 ip = vec4(1.0/294.0,1.0/49.0,1.0/7.0,0.0);
+        vec4 p0 = grad4(j0, ip), p1 = grad4(j1.x, ip),
+            p2 = grad4(j1.y, ip), p3 = grad4(j1.z, ip),
+            p4 = grad4(j1.w, ip);
+        vec4 norm = taylorInvSqrt(vec4(
+          dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)
+        ));
+        p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+        p4 *= taylorInvSqrt(dot(p4,p4));
+        vec3 m0 = max(0.6 - vec3(dot(x0,x0),dot(x1,x1),dot(x2,x2)), 0.0);
+        vec2 m1 = max(0.6 - vec2(dot(x3,x3),dot(x4,x4)), 0.0);
+        m0 *= m0; m1 *= m1;
+        return 49.0 * (
+          dot(m0*m0, vec3(dot(p0,x0),dot(p1,x1),dot(p2,x2))) +
+          dot(m1*m1, vec2(dot(p3,x3),dot(p4,x4)))
+        );
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+      import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
+      import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+      import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
+      import { RectAreaLightHelper } from "three/addons/helpers/RectAreaLightHelper.js";
+      import {
+        BokehShader,
+        BokehDepthShader
+      } from "three/addons/shaders/BokehShader2.js";
+      import { GUI } from "three/addons/libs/lil-gui.module.min.js";
+
+      const simplex4 = document.querySelector("#snoise4").textContent;
+      const canvas = document.querySelector("#canvas");
+      const dpr = Math.min(window.devicePixelRatio, 2);
+      const width = (canvas.width = window.innerWidth * dpr);
+      const height = (canvas.height = window.innerHeight * dpr);
+
+      RectAreaLightUniformsLib.init();
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true
+      });
+
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(dpr);
+      renderer.sortObjects = true;
+      renderer.depthTest = true;
+      renderer.depthWrite = true;
+      renderer.premultipliedAlpha = true;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      canvas.style.width = `100vw`;
+      canvas.style.height = `100vh`;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
+      scene.fog = new THREE.Fog(0x000000, 3, 12);
+
+      const postprocessing = {};
+
+      const settings = {
+        bias: { value: 0.5 },
+        depthblur: { value: 0 },
+        dithering: { value: 1e-4 },
+        focalDepth: { value: 5.6 },
+        focalLength: { value: 16 },
+        fringe: { value: .7 },
+        fstop: { value: .42 },
+        gain: { value: 2 },
+        manualdof: { value: 0 },
+        maxblur: { value: 0.8 },
+        noise: { value: 0 },
+        pentagon: { value: 0 },
+        shaderFocus: { value: 0 },
+        showFocus: { value: 0 },
+        threshold: { value: 0.5 },
+        vignetting: { value: 1 },
+        zfar: { value: 150 },
+        znear: { value: 4 }
+      };
+
+      function initPostprocessing() {
+        postprocessing.scene = new THREE.Scene();
+
+        postprocessing.camera = new THREE.OrthographicCamera(
+          window.innerWidth / -2,
+          window.innerWidth / 2,
+          window.innerHeight / 2,
+          window.innerHeight / -2,
+          -10000,
+          10000
+        );
+        postprocessing.camera.position.z = 7.5;
+
+        postprocessing.scene.add(postprocessing.camera);
+
+        postprocessing.rtTextureDepth = new THREE.WebGLRenderTarget(
+          window.innerWidth * dpr,
+          window.innerHeight * dpr,
+          {
+            type: THREE.HalfFloatType,
+            depthBuffer: true,
+            depthTexture: new THREE.DepthTexture()
+          }
+        );
+        postprocessing.rtTextureColor = new THREE.WebGLRenderTarget(
+          window.innerWidth * dpr,
+          window.innerHeight * dpr,
+          {
+            type: THREE.HalfFloatType,
+            depthBuffer: true
+          }
+        );
+
+        const bokeh_shader = BokehShader;
+
+        postprocessing.bokeh_uniforms = THREE.UniformsUtils.clone(
+          bokeh_shader.uniforms
+        );
+
+        // Инициализируем все параметры
+        Object.keys(settings).forEach((key) => {
+          postprocessing.bokeh_uniforms[key].value = settings[key].value;
+        });
+
+        postprocessing.bokeh_uniforms["tColor"].value =
+          postprocessing.rtTextureColor.texture;
+        postprocessing.bokeh_uniforms["tDepth"].value =
+          postprocessing.rtTextureDepth.depthTexture;
+        postprocessing.bokeh_uniforms["textureWidth"].value = window.innerWidth * dpr;
+        postprocessing.bokeh_uniforms["textureHeight"].value =
+          window.innerHeight * dpr;
+
+        postprocessing.bokeh_uniforms["znear"].value = camera.near;
+        postprocessing.bokeh_uniforms["zfar"].value = camera.far;
+
+        postprocessing.materialBokeh = new THREE.ShaderMaterial({
+          uniforms: postprocessing.bokeh_uniforms,
+          vertexShader: bokeh_shader.vertexShader,
+          fragmentShader: bokeh_shader.fragmentShader,
+          defines: {
+            RINGS: 2,
+            SAMPLES: 4
+          }
+        });
+
+        postprocessing.quad = new THREE.Mesh(
+          new THREE.PlaneGeometry(window.innerWidth, window.innerHeight),
+          postprocessing.materialBokeh
+        );
+        postprocessing.quad.position.z = -500;
+        postprocessing.scene.add(postprocessing.quad);
+
+        const depthBlurGroup = gui.addFolder("DepthBlur");
+
+        // Настраиваем более подходящие диапазоны для каждого параметра
+        depthBlurGroup
+          .add(settings.focalDepth, "value", 0, 20)
+          .name("focalDepth")
+          .onChange((value) => {
+            postprocessing.bokeh_uniforms["focalDepth"].value = value;
+          });
+        depthBlurGroup
+          .add(settings.fstop, "value", 0.1, 10)
+          .name("fstop")
+          .onChange((value) => {
+            postprocessing.bokeh_uniforms["fstop"].value = value;
+          });
+        depthBlurGroup
+          .add(settings.maxblur, "value", 0, 5)
+          .name("maxblur")
+          .onChange((value) => {
+            postprocessing.bokeh_uniforms["maxblur"].value = value;
+          });
+        depthBlurGroup
+          .add(settings.threshold, "value", 0, 1)
+          .name("threshold")
+          .onChange((value) => {
+            postprocessing.bokeh_uniforms["threshold"].value = value;
+          });
+        depthBlurGroup
+          .add(settings.gain, "value", 0, 10)
+          .name("gain")
+          .onChange((value) => {
+            postprocessing.bokeh_uniforms["gain"].value = value;
+          });
+        depthBlurGroup
+          .add(settings.manualdof, "value", false, true)
+          .name("manualdof")
+          .onChange((value) => {
+            postprocessing.bokeh_uniforms["manualdof"].value = value;
+          });
+        depthBlurGroup
+          .add(settings.shaderFocus, "value", false, true)
+          .name("shaderFocus")
+          .onChange((value) => {
+            postprocessing.bokeh_uniforms["shaderFocus"].value = value;
+          });
+      }
+
+      // =====================
+      // Uniforms for GUI
+      // =====================
+      const gu = {
+        time: { value: 0 },
+        morph: { value: 0 },
+        shift: { value: 0 },
+        noisePosScale: { value: 0.3 },
+        noiseTimeScale: { value: 0.2 },
+        noiseAmp1: { value: 0.65 },
+        noiseAmp2: { value: 0.2 },
+        noiseAmp3: { value: 0.2 },
+        mouse: { value: [0, 0] },
+        scrollY: { value: window.scrollY },
+        light: { value: [0, 0, 0] },
+        offset: { value: 2 },
+        focalDepth: { value: 7 }
+      };
+
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+
+      const updateSpheresRotation = () => {
+        spheres.forEach((sphere) => {
+          const { sphereMesh, pointsMesh } = sphere;
+          const directionToMouse = new THREE.Vector3(
+            gu.mouse.value[0],
+            gu.mouse.value[1],
+            0
+          )
+            .sub(sphereMesh.position)
+            .normalize();
+          const angleX = directionToMouse.x * 0.1;
+          // const angleY = -directionToMouse.y * 0.1 - Math.PI * 0.5;
+          const angleY = -directionToMouse.y * 0.1;
+
+          const { clamp } = THREE.MathUtils;
+
+          const firstScreenMorph = clamp(gu.morph.value, 0, 1);
+          const amount = 0.1 * firstScreenMorph;
+
+          sphereMesh.rotation.x += (angleY - sphereMesh.rotation.x) * amount;
+          pointsMesh.rotation.x += (angleY - pointsMesh.rotation.x) * amount;
+
+          sphereMesh.rotation.y += (angleX - sphereMesh.rotation.y) * amount;
+          pointsMesh.rotation.y += (angleX - pointsMesh.rotation.y) * amount;
+
+          sphereMesh.rotation.x *= firstScreenMorph;
+          sphereMesh.rotation.y *= firstScreenMorph;
+          pointsMesh.rotation.x *= firstScreenMorph;
+          pointsMesh.rotation.y *= firstScreenMorph;
+        });
+      };
+
+      window.addEventListener("mousemove", (e) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 10;
+        const y = -(e.clientY / window.innerHeight - 0.5) * 10;
+
+        pointer.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+        pointer.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+
+        gu.mouse.value = [x, y];
+
+        keyLight.position.set(x, y, 5);
+        gu.light.value = [x, y, 5];
+
+        updateSpheresRotation();
+      });
+
+      const backgroundMaterial = new THREE.ShaderMaterial({
+        depthTest: false,
+        vertexShader: `
+              varying vec2 vUv;
+
+              void main() {
+                  vUv = uv;
+                  gl_Position = vec4( position, 1.0 );
+              }
+            `,
+        fragmentShader: `
+              varying vec2 vUv;
+              uniform float t;
+              uniform float scrollY;
+
+              ${simplex4}
+
+              vec3 toLinear(vec3 c) {
+                  return pow(c, vec3(2.2));
+              }
+
+              void main() {
+                vec2 pos = vUv - vec2(0, scrollY * 0.0002);
+
+                float noise = clamp(snoise4(vec4(pos, 1.0, t * 0.1)), 0.0, 1.0);
+
+                vec3 bgColor = vec3(0.0);
+                vec3 fgColor = toLinear(vec3(1., 0.24, 0.05));
+                vec3 color = mix(bgColor, fgColor, noise);
+
+                gl_FragColor = vec4(color, 1.0);
+              }
+            `
+      });
+
+      backgroundMaterial.uniforms = {
+        t: gu.time,
+        scrollY: gu.scrollY
+      };
+
+      const quad = new THREE.Mesh(
+        new THREE.PlaneGeometry(2, 2, 1, 1),
+        backgroundMaterial
+      );
+
+      quad.renderOrder = -1; // или любое маленькое значение
+
+      scene.add(quad);
+
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.x = 0;
+      camera.position.y = 0;
+      camera.position.z = 7.5;
+
+      const depthShader = BokehDepthShader;
+
+      const materialDepth = new THREE.ShaderMaterial({
+        uniforms: depthShader.uniforms,
+        vertexShader: depthShader.vertexShader,
+        fragmentShader: depthShader.fragmentShader
+      });
+
+      materialDepth.uniforms["mNear"].value = camera.near;
+      materialDepth.uniforms["mFar"].value = camera.far;
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+
+      const bokehPass = new BokehPass(scene, camera, {
+        focus: 6.0,
+        aperture: 0.0005,
+        maxblur: 0.01
+      });
+
+      bokehPass.needsSwap = true;
+
+      const gui = new GUI();
+
+      const bokehGroup = gui.addFolder("Bokeh");
+
+      // bokeh settings
+      bokehGroup.add(bokehPass.uniforms.focus, "value", 0, 10).name("focus");
+      bokehGroup
+        .add(bokehPass.uniforms.aperture, "value", 0, 0.1)
+        .name("aperture");
+      bokehGroup.add(bokehPass.uniforms.maxblur, "value", 0, 1).name("maxblur");
+
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(innerWidth, innerHeight),
+        1.5,
+        0.4,
+        0.85
+      );
+
+      bloomPass.strength = 0.41;
+      bloomPass.threshold = 0.296;
+      bloomPass.radius = 0.1;
+
+      const bloomGroup = gui.addFolder("Bloom");
+
+      bloomGroup.add(bloomPass, "strength", 0, 10).name("strength");
+      bloomGroup.add(bloomPass, "threshold", 0, 1).name("threshold");
+      bloomGroup.add(bloomPass, "radius", 0, 1).name("radius");
+
+      const outputPass = new OutputPass();
+
+      // composer.addPass(bokehPass);
+      composer.addPass(bloomPass);
+      composer.addPass(outputPass);
+
+      // =====================
+      // toSphere Helper
+      // =====================
+      function toSphere(geom, radius) {
+        const posAttr = geom.attributes.position;
+        const cnt = posAttr.count;
+
+        const positions = [];
+        for (let i = 0; i < cnt; i++) {
+          positions.push([posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i)]);
+        }
+
+        // Генерация точек на сфере
+        const rows = Math.ceil(Math.sqrt(cnt));
+        const cols = Math.ceil(cnt / rows);
+
+        const altPoints = [];
+
+        for (let i = 0; i < rows; i++) {
+          const phi = Math.PI * (i / (rows - 1));
+
+          for (let j = 0; j < cols && altPoints.length < cnt; j++) {
+            const theta = 2 * Math.PI * (j / cols);
+
+            const x = radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.cos(phi);
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+
+            altPoints.push([x, y, z]);
+          }
+        }
+
+        // Создаём массив индексов для сортировки
+        const indices = altPoints.map((p, i) => i);
+
+        // Сортируем индексы по Y -> atan2(Z, X)
+        indices.sort((a, b) => {
+          const aY = Math.round(altPoints[a][1] * 1000);
+          const bY = Math.round(altPoints[b][1] * 1000);
+          if (aY !== bY) return bY - aY;
+
+          const aAngle = Math.atan2(altPoints[a][2], altPoints[a][0]);
+          const bAngle = Math.atan2(altPoints[b][2], altPoints[b][0]);
+          return aAngle - bAngle;
+        });
+
+        positions.sort((a, b) => {
+          const aY = Math.round(a[1] * 1000);
+          const bY = Math.round(b[1] * 1000);
+          if (aY !== bY) return bY - aY;
+          return a[2] - b[2];
+        });
+
+        altPoints.sort((a, b) => {
+          const aY = Math.round(a[1] * 1000);
+          const bY = Math.round(b[1] * 1000);
+          if (aY !== bY) return bY - aY;
+          return a[2] - b[2];
+        });
+
+        // Заменим оригинальный position на отсортированный
+        geom.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(positions.flat(), 3)
+        );
+
+        geom.setAttribute(
+          "altPosition",
+          new THREE.Float32BufferAttribute(altPoints.flat(), 3)
+        );
+      }
+
+      // =====================
+      // Lights
+      // =====================
+      const lightsDebug = false;
+
+      scene.add(new THREE.AmbientLight(0x222222, 0.5));
+      const keyLight = new THREE.PointLight(0xff5500, 1.2, 0);
+      keyLight.position.set(3, -3, 3);
+
+      if (lightsDebug) {
+        const keyLightDebug = new THREE.PointLightHelper(keyLight, 0.1);
+        scene.add(keyLightDebug);
+      }
+
+      scene.add(keyLight);
+
+      const getRectLight = (x, y, z) => {
+        const rectWidth = 5;
+        const rectHeight = 5;
+        const intensity = 0.1;
+
+        const rectLight = new THREE.RectAreaLight(
+          0x993301,
+          intensity,
+          rectWidth,
+          rectHeight
+        );
+        rectLight.position.set(x, y, z);
+        rectLight.lookAt(0, 0, 0);
+        rectLight.power = 1000;
+
+        if (lightsDebug) {
+          const rectLightHelper = new RectAreaLightHelper(rectLight);
+          rectLight.add(rectLightHelper);
+        }
+
+        return rectLight;
+      };
+
+      const lights = [
+        getRectLight(4, -4, 1.5),
+        getRectLight(5, 2, 1.5),
+        getRectLight(-2, -5, 1.5)
+        // getRectLight(-6, 6, 1.5)
+      ];
+
+      scene.add(...lights);
+
+      // =====================
+      // Geometry + Points
+      // =====================
+      const pointsGeometry = new THREE.PlaneGeometry(30, 10, 350, 200)
+        .rotateX(-Math.PI * 0.6)
+        .translate(0, 1, 0);
+      pointsGeometry.index = null;
+      toSphere(pointsGeometry, 2);
+
+      const distance = (x, y) => {
+        return Math.sqrt(x * x + y * y);
+      };
+
+      const Points_onBeforeCompile = (instanceId) => (shader) => {
+        // inject all uniforms
+        Object.assign(shader.uniforms, {
+          time: gu.time,
+          morph: gu.morph,
+          shift: gu.shift,
+          noisePosScale: gu.noisePosScale,
+          noiseTimeScale: gu.noiseTimeScale,
+          noiseAmp1: gu.noiseAmp1,
+          noiseAmp2: gu.noiseAmp2,
+          noiseAmp3: gu.noiseAmp3,
+          mouse: gu.mouse,
+          light: gu.light,
+          instanceId: { value: instanceId }
+        });
+        shader.vertexShader = `
+          uniform float time;
+          uniform float morph;
+          uniform float shift;
+          uniform float noisePosScale;
+          uniform float noiseTimeScale;
+          uniform float noiseAmp1;
+          uniform float noiseAmp2;
+          uniform float noiseAmp3;
+          uniform vec2 mouse;
+          uniform vec3 light;
+          uniform float instanceId;
+          attribute vec3 altPosition;
+
+          varying float vLight;
+          varying float vMorph;
+          varying vec3 vPosition;
+          varying vec3 vViewDirection;
+          ${simplex4}
+          ${shader.vertexShader}
+        `.replace(
+          `#include <begin_vertex>`,
+          `#include <begin_vertex>
+          float t = time * noiseTimeScale;
+          vec3 pos1 = position;
+          vec3 pos2 = altPosition;
+          float n1 = snoise4(vec4(pos1 * vec3(0.5, 1., 1.5) * noisePosScale + vec3(t, 0., 0.), t + instanceId));
+          float n2 = snoise4(vec4(normalize(pos2), t + instanceId));
+          float n3 = snoise4(vec4(normalize(pos2) * 2., t + instanceId));
+          pos1.y += n1 * noiseAmp1;
+          pos2   += normalize(pos2) * (n2 * noiseAmp2 + n3 * noiseAmp3);
+          pos2.y += shift;
+          float d = length(pos1.yz + vec2(0., 7.5)) / (7.5 * sqrt(2.));
+          d = sqrt(1. - (1. - d*d)) + pos1.z * 0.1;
+          float f = clamp(morph * 2. - d, 0., 1.);
+
+          vec3 direction = normalize(vec3(mouse.x, 0.0, mouse.y) - pos1);
+          pos1 += direction * 0.2;
+
+          transformed = mix(pos1, pos2, f);
+
+          vec4 worldPosition = modelMatrix * vec4(transformed, 1.0);
+          vec3 lightDir = light - worldPosition.xyz;
+
+          float lightDist = 1.0 / distance(light, worldPosition.xyz);
+          float diff = max(dot(lightDir, transformed), 0.0);
+          vLight = diff * lightDist;
+          vMorph = clamp(morph, 0.0, 1.0);
+          vPosition = transformed;
+          vViewDirection = normalize(cameraPosition - worldPosition.xyz);
+        `
+        );
+
+        shader.fragmentShader = `
+        varying float vLight;
+        varying float vMorph;
+        varying vec3 vPosition;
+        varying vec3 vViewDirection;
+        ${shader.fragmentShader}
+      `;
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          `#include <clipping_planes_fragment>`,
+          `#include <clipping_planes_fragment>
+                  if (length(gl_PointCoord.xy - 0.5) > 0.5) discard;
+                `
+        );
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          `outgoingLight = diffuseColor.rgb;`,
+          `
+          float closestPoint = dot(vViewDirection, vPosition);
+          float sphereAlpha = smoothstep(0.0, 0.6, closestPoint);
+          float sphereColorFactor = smoothstep(1.1, 1.3, closestPoint);
+          vec3 sphereColor = mix(vec3(0.55, 0.06, 0.0125), diffuseColor.rgb, sphereColorFactor);
+          vec3 sphereLightColor = mix(vec3(1., 0.12, 0.025), vec3(1., 0.63, 0.15), sphereColorFactor);
+          vec3 lightColor = mix(vec3(0.5, 0.315, 0.075), sphereLightColor, vMorph);
+          
+          diffuseColor.rgb = mix(diffuseColor.rgb, sphereColor, vMorph);
+          diffuseColor.a = mix(diffuseColor.a * 0.4, sphereAlpha, vMorph);
+          outgoingLight = diffuseColor.rgb + (lightColor * vLight * 1.1);
+          `
+        );
+      };
+
+      const Sphere_onBeforeCompile = (instanceId) => (shader) => {
+        Object.assign(shader.uniforms, {
+          time: gu.time,
+          shift: gu.shift,
+          noisePosScale: { value: 0.7 },
+          noiseTimeScale: gu.noiseTimeScale,
+          noiseAmp1: gu.noiseAmp1,
+          noiseAmp2: gu.noiseAmp2,
+          noiseAmp3: gu.noiseAmp3,
+          fresnelBias: { value: 0.0 },
+          fresnelScale: { value: 0.0002 },
+          fresnelPower: { value: 11.1 },
+          instanceId: { value: instanceId }
+        });
+        shader.vertexShader = `
+            uniform float time;
+            uniform float shift;
+            uniform float noisePosScale;
+            uniform float noiseTimeScale;
+            uniform float noiseAmp1;
+            uniform float noiseAmp2;
+            uniform float noiseAmp3;
+            uniform float fresnelBias;
+            uniform float fresnelScale;
+            uniform float fresnelPower;
+            uniform float instanceId;
+
+            attribute vec3 altPosition;
+
+            varying vec3 vWorldPosition;
+            ${simplex4}
+            ${shader.vertexShader}
+          `.replace(
+          `#include <begin_vertex>`,
+          `#include <begin_vertex>
+          float t = time * noiseTimeScale;
+          vec3 pos1 = position;
+          float n1 = snoise4(vec4(normalize(pos1), t + instanceId));
+          float n3 = snoise4(vec4(normalize(pos1) * 2., t + instanceId));
+
+          pos1   += normalize(pos1) * (n1 * noiseAmp2 + n3 * noiseAmp3);
+          pos1.y += shift;
+
+          transformed = pos1;
+          vWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        `
+        );
+
+        shader.fragmentShader = `
+          uniform float fresnelBias;
+          uniform float fresnelScale;
+          uniform float fresnelPower;
+          varying vec3 vWorldPosition;
+          ${shader.fragmentShader}
+        `;
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          `#include <clipping_planes_fragment>`,
+          `#include <clipping_planes_fragment>
+            vec3 viewDirection = normalize(cameraPosition + vec3(-3., 3., 0.) - vWorldPosition);
+            float fresnelFactor = fresnelBias + fresnelScale * pow(1.9 - dot(vNormal, viewDirection), fresnelPower);
+          `
+        );
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          `#include <dithering_fragment>`,
+          `
+            #include <dithering_fragment>
+            gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.99, 0.1, 0.), fresnelFactor);
+          `
+        );
+      };
+
+      const anim = { speed: 1.0 };
+
+      const sphereGeometry = new THREE.SphereGeometry(2.1, 100, 100);
+
+      const spheresCount = 5;
+      const spheres = [];
+
+      const getPointTexture = () => {
+        const canvas = document.createElement("canvas");
+        const canvasSize = 32;
+        const circleRadius = 10;
+        canvas.width = canvas.height = 2 * canvasSize;
+        const context = canvas.getContext("2d");
+
+        context.beginPath();
+        context.rect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = "#000";
+        context.fill();
+
+        context.beginPath();
+        context.arc(
+          canvasSize,
+          canvasSize,
+          circleRadius,
+          0,
+          2 * Math.PI,
+          false
+        );
+        context.fillStyle = "#fff";
+        context.fill();
+
+        const texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true; // 🔴 ОБЯЗАТЕЛЬНО
+
+        return texture;
+      };
+
+      const pointsMap = getPointTexture();
+
+      const POINTS_SIZE = 0.03 / dpr;
+      // const POINTS_SIZE = 1;
+
+      for (let i = 0; i < spheresCount; i++) {
+        const pointsMaterial = new THREE.PointsMaterial({
+          size: POINTS_SIZE,
+          color: 0xff9d50,
+          // opacity: 0.0,
+          // transparent: true,
+          // alphaTest: 0.5,
+          // map: pointsMap,
+          depthTest: true,
+          depthWrite: true,
+          blending: THREE.AdditiveBlending,
+          onBeforeCompile: Points_onBeforeCompile(i)
+        });
+
+        const pointsMesh = new THREE.Points(pointsGeometry, pointsMaterial);
+
+        const sphereMaterial = new THREE.MeshPhysicalMaterial({
+          color: 0x7700000,
+          transparent: true,
+          metalness: 0.5,
+          roughness: 0.5,
+          opacity: 0,
+          side: THREE.DoubleSide,
+          onBeforeCompile: Sphere_onBeforeCompile(i)
+        });
+
+        const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+        spheres.push({
+          pointsMesh,
+          sphereMesh
+        });
+
+        scene.add(sphereMesh);
+        scene.add(pointsMesh);
+      }
+
+      updateSpheresRotation();
+
+      const positions = [
+        [0, 0, 0, 1],
+        [-1.5, -1.5, 3, 0.5],
+        [3, 3, -2, 0.5],
+        [2.5, -2, 2, 0.4],
+        [-4, 4, -2, 0.6]
+      ];
+
+      const updateMorph = () => {
+        gu.morph.value = 0.0001 + (window.scrollY / window.innerHeight) * 2;
+        gu.scrollY.value = window.scrollY;
+
+        const { lerp, clamp } = THREE.MathUtils;
+        const firstScreenMorph = clamp(gu.morph.value, 0, 1);
+        const secondScreenMorph = clamp(gu.morph.value - 4.0, 0, 1);
+
+        spheres.forEach((sphere, index) => {
+          const { sphereMesh, pointsMesh } = sphere;
+
+          if (index === 0) {
+            sphereMesh.visible = true;
+            pointsMesh.visible = true;
+
+            sphereMesh.material.opacity = lerp(
+              0,
+              0.75,
+              Math.pow(firstScreenMorph, 4)
+            );
+
+            pointsMesh.material.opacity = 1;
+
+            sphereMesh.scale.set(
+              lerp(0, 1, firstScreenMorph),
+              lerp(0, 1, firstScreenMorph),
+              lerp(0, 1, firstScreenMorph)
+            );
+          } else {
+            if (secondScreenMorph > 0) {
+              sphereMesh.visible = true;
+              pointsMesh.visible = true;
+
+              const angle = (index / spheres.length) * Math.PI * 2;
+
+              const [x, y, z, scale] = positions[index];
+
+              const position = new THREE.Vector3(
+                lerp(0, x, secondScreenMorph),
+                lerp(0, y, secondScreenMorph),
+                lerp(0, z, secondScreenMorph)
+              );
+
+              sphereMesh.position.copy(position);
+              pointsMesh.position.copy(position);
+
+              const initialScale = 0.9;
+
+              sphereMesh.scale.set(
+                lerp(initialScale, scale, secondScreenMorph),
+                lerp(initialScale, scale, secondScreenMorph),
+                lerp(initialScale, scale, secondScreenMorph)
+              );
+
+              sphereMesh.material.opacity = lerp(0, 0.75, secondScreenMorph);
+              pointsMesh.material.size = lerp(
+                0,
+                POINTS_SIZE * scale,
+                secondScreenMorph
+              );
+
+              pointsMesh.scale.set(
+                lerp(initialScale, scale, secondScreenMorph),
+                lerp(initialScale, scale, secondScreenMorph),
+                lerp(initialScale, scale, secondScreenMorph)
+              );
+            } else {
+              sphereMesh.visible = false;
+              pointsMesh.visible = false;
+            }
+          }
+        });
+
+        updateSpheresRotation();
+      };
+
+      initPostprocessing();
+
+      updateMorph();
+
+      window.addEventListener("wheel", updateMorph);
+
+      const clock = new THREE.Clock();
+      function animate() {
+        gu.time.value += clock.getDelta() * anim.speed;
+        requestAnimationFrame(animate);
+
+        // Обновляем все параметры BokehShader
+        Object.keys(settings).forEach((key) => {
+          postprocessing.bokeh_uniforms[key].value = settings[key].value;
+        });
+
+        // Обновляем параметры камеры
+        postprocessing.bokeh_uniforms["znear"].value = camera.near;
+        postprocessing.bokeh_uniforms["zfar"].value = camera.far;
+
+        // render scene into texture
+        renderer.setRenderTarget(postprocessing.rtTextureColor);
+        renderer.clear();
+        renderer.render(scene, camera);
+
+        // render depth into texture
+        scene.overrideMaterial = materialDepth;
+        renderer.setRenderTarget(postprocessing.rtTextureDepth);
+        renderer.clear();
+        renderer.render(scene, camera);
+        scene.overrideMaterial = null;
+
+        // render bokeh composite
+        renderer.setRenderTarget(null);
+        renderer.render(postprocessing.scene, postprocessing.camera);
+
+        // render bloom effect
+        // composer.render();
+      }
+      animate();
+    </script>
+    <section style="width: 100vw; height: 150vh">
+      <div
+        style="
+          box-sizing: border-box;
+          width: 100vw;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          padding: 100px;
+        "
+      >
+        <h1>IZUM.STUDY</h1>
+        <p>
+          IZUM.STUDY is a design studio that specializes in creating unique and
+          innovative designs for a wide range of clients.
+        </p>
+      </div>
+    </section>
+    <section
+      style="width: 100vw; height: 100vh; background-color: #fff; color: #000"
+    >
+      <h1>IZUM.STUDY</h1>
+      <p>
+        IZUM.STUDY is a design studio that specializes in creating unique and
+        innovative designs for a wide range of clients.
+      </p>
+    </section>
+    <section style="width: 100vw; height: 150vh">
+      <div
+        style="
+          box-sizing: border-box;
+          width: 100vw;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          padding: 100px;
+        "
+      >
+        <h1>IZUM.STUDY</h1>
+        <p>
+          IZUM.STUDY is a design studio that specializes in creating unique and
+          innovative designs for a wide range of clients.
+        </p>
+      </div>
+    </section>
+  </body>
+</html>
