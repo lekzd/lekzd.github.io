@@ -109,9 +109,11 @@
       } from "three/addons/shaders/BokehShader2.js";
       import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 
+      const gui = new GUI();
+
       const simplex4 = document.querySelector("#snoise4").textContent;
       const canvas = document.querySelector("#canvas");
-      const dpr = Math.min(window.devicePixelRatio, 2);
+      const dpr = Math.min(window.devicePixelRatio, 1);
       const width = (canvas.width = window.innerWidth * dpr);
       const height = (canvas.height = window.innerHeight * dpr);
 
@@ -144,8 +146,8 @@
         dithering: { value: 1e-4 },
         focalDepth: { value: 5.6 },
         focalLength: { value: 16 },
-        fringe: { value: .7 },
-        fstop: { value: .42 },
+        fringe: { value: 0.7 },
+        fstop: { value: 0.42 },
         gain: { value: 2 },
         manualdof: { value: 0 },
         maxblur: { value: 0.8 },
@@ -207,7 +209,8 @@
           postprocessing.rtTextureColor.texture;
         postprocessing.bokeh_uniforms["tDepth"].value =
           postprocessing.rtTextureDepth.depthTexture;
-        postprocessing.bokeh_uniforms["textureWidth"].value = window.innerWidth * dpr;
+        postprocessing.bokeh_uniforms["textureWidth"].value =
+          window.innerWidth * dpr;
         postprocessing.bokeh_uniforms["textureHeight"].value =
           window.innerHeight * dpr;
 
@@ -288,8 +291,8 @@
         noisePosScale: { value: 0.3 },
         noiseTimeScale: { value: 0.2 },
         noiseAmp1: { value: 0.65 },
-        noiseAmp2: { value: 0.2 },
-        noiseAmp3: { value: 0.2 },
+        noiseAmp2: { value: 0.15 },
+        noiseAmp3: { value: 0.15 },
         mouse: { value: [0, 0] },
         scrollY: { value: window.scrollY },
         light: { value: [0, 0, 0] },
@@ -348,6 +351,13 @@
         updateSpheresRotation();
       });
 
+      const backgroundSettings = {
+        colorFrom: { value: [0.0, 0.0, 0.0] },
+        colorTo: { value: [1.0, 0.24, 0.05] },
+        amplitude: { value: 0.1 },
+        speed: { value: 1 }
+      };
+
       const backgroundMaterial = new THREE.ShaderMaterial({
         depthTest: false,
         vertexShader: `
@@ -362,21 +372,21 @@
               varying vec2 vUv;
               uniform float t;
               uniform float scrollY;
-
-              ${simplex4}
+              uniform vec3 colorFrom;
+              uniform vec3 colorTo;
+              uniform float amplitude;
+              uniform float speed;
 
               vec3 toLinear(vec3 c) {
                   return pow(c, vec3(2.2));
               }
 
               void main() {
-                vec2 pos = vUv - vec2(0, scrollY * 0.0002);
+                vec2 pos = vUv + vec2(-0.5, 0.);
 
-                float noise = clamp(snoise4(vec4(pos, 1.0, t * 0.1)), 0.0, 1.0);
-
-                vec3 bgColor = vec3(0.0);
-                vec3 fgColor = toLinear(vec3(1., 0.24, 0.05));
-                vec3 color = mix(bgColor, fgColor, noise);
+                float linearGradient = dot(pos, vec2(sin(t * speed) * amplitude, 1.0));
+                float colorFactor = smoothstep(0., 0.5, linearGradient);
+                vec3 color = mix(toLinear(colorTo), toLinear(colorFrom), colorFactor);
 
                 gl_FragColor = vec4(color, 1.0);
               }
@@ -385,7 +395,11 @@
 
       backgroundMaterial.uniforms = {
         t: gu.time,
-        scrollY: gu.scrollY
+        scrollY: gu.scrollY,
+        colorFrom: backgroundSettings.colorFrom,
+        colorTo: backgroundSettings.colorTo,
+        amplitude: backgroundSettings.amplitude,
+        speed: backgroundSettings.speed
       };
 
       const quad = new THREE.Mesh(
@@ -435,7 +449,32 @@
 
       bokehPass.needsSwap = true;
 
-      const gui = new GUI();
+      const backgroundGroup = gui.addFolder("Background");
+
+      backgroundGroup
+        .addColor(backgroundSettings.colorFrom, "value")
+        .name("colorFrom")
+        .onChange((value) => {
+          backgroundMaterial.uniforms.colorFrom.value = value;
+        });
+      backgroundGroup
+        .addColor(backgroundSettings.colorTo, "value")
+        .name("colorTo")
+        .onChange((value) => {
+          backgroundMaterial.uniforms.colorTo.value = value;
+        });
+      backgroundGroup
+        .add(backgroundSettings.amplitude, "value", 0, 1)
+        .name("amplitude")
+        .onChange((value) => {
+          backgroundMaterial.uniforms.amplitude.value = value;
+        });
+      backgroundGroup
+        .add(backgroundSettings.speed, "value", 0, 1)
+        .name("speed")
+        .onChange((value) => {
+          backgroundMaterial.uniforms.speed.value = value;
+        });
 
       const bokehGroup = gui.addFolder("Bokeh");
 
@@ -510,8 +549,8 @@
           const bY = Math.round(altPoints[b][1] * 1000);
           if (aY !== bY) return bY - aY;
 
-          const aAngle = Math.atan2(altPoints[a][2], altPoints[a][0]);
-          const bAngle = Math.atan2(altPoints[b][2], altPoints[b][0]);
+          const aAngle = Math.atan2(altPoints[a][1], altPoints[a][0]);
+          const bAngle = Math.atan2(altPoints[b][1], altPoints[b][0]);
           return aAngle - bAngle;
         });
 
@@ -519,14 +558,15 @@
           const aY = Math.round(a[1] * 1000);
           const bY = Math.round(b[1] * 1000);
           if (aY !== bY) return bY - aY;
-          return a[2] - b[2];
+          return b[1] - a[1];
         });
 
         altPoints.sort((a, b) => {
-          const aY = Math.round(a[1] * 1000);
-          const bY = Math.round(b[1] * 1000);
+          const r = () => Math.random() * 0.5;
+          const aY = Math.round((a[1] + r()) * 1000);
+          const bY = Math.round((b[1] + r()) * 1000);
           if (aY !== bY) return bY - aY;
-          return a[2] - b[2];
+          return (a[0] + r()) - (b[0] + r());
         });
 
         // Заменим оригинальный position на отсортированный
@@ -580,11 +620,21 @@
         return rectLight;
       };
 
+      const angle = -Math.PI * 0.5;
+      const diff = Math.PI * 0.2;
+
       const lights = [
-        getRectLight(4, -4, 1.5),
-        getRectLight(5, 2, 1.5),
-        getRectLight(-2, -5, 1.5)
-        // getRectLight(-6, 6, 1.5)
+        getRectLight(
+          Math.cos(angle + diff) * 4,
+          Math.sin(angle + diff) * 4,
+          1.5
+        ),
+        getRectLight(Math.cos(angle) * 4, Math.sin(angle) * 4, 1.5),
+        getRectLight(
+          Math.cos(angle - diff) * 4,
+          Math.sin(angle - diff) * 4,
+          1.5
+        )
       ];
 
       scene.add(...lights);
@@ -593,7 +643,8 @@
       // Geometry + Points
       // =====================
       const pointsGeometry = new THREE.PlaneGeometry(30, 10, 350, 200)
-        .rotateX(-Math.PI * 0.6)
+        .rotateX(-Math.PI * 0.65)
+        .rotateY(0.15)
         .translate(0, 1, 0);
       pointsGeometry.index = null;
       toSphere(pointsGeometry, 2);
@@ -601,6 +652,16 @@
       const distance = (x, y) => {
         return Math.sqrt(x * x + y * y);
       };
+
+      const waveSettings = {
+        color: { value: [0.55, 0.06, 0.0125] },
+        lightColor: { value: [1., 0.12, 0.025] },
+      };
+
+      const waveGroup = gui.addFolder("Wave");
+
+      waveGroup.addColor(waveSettings.color, "value").name("color");
+      waveGroup.addColor(waveSettings.lightColor, "value").name("lightColor");
 
       const Points_onBeforeCompile = (instanceId) => (shader) => {
         // inject all uniforms
@@ -615,7 +676,9 @@
           noiseAmp3: gu.noiseAmp3,
           mouse: gu.mouse,
           light: gu.light,
-          instanceId: { value: instanceId }
+          instanceId: { value: instanceId },
+          waveColor: waveSettings.color,
+          waveLightColor: waveSettings.lightColor
         });
         shader.vertexShader = `
           uniform float time;
@@ -649,7 +712,7 @@
           pos1.y += n1 * noiseAmp1;
           pos2   += normalize(pos2) * (n2 * noiseAmp2 + n3 * noiseAmp3);
           pos2.y += shift;
-          float d = length(pos1.yz + vec2(0., 7.5)) / (7.5 * sqrt(2.));
+          float d = length(pos1.zy + vec2(0., 7.5)) / (7.5 * sqrt(2.));
           d = sqrt(1. - (1. - d*d)) + pos1.z * 0.1;
           float f = clamp(morph * 2. - d, 0., 1.);
 
@@ -661,16 +724,23 @@
           vec4 worldPosition = modelMatrix * vec4(transformed, 1.0);
           vec3 lightDir = light - worldPosition.xyz;
 
-          float lightDist = 1.0 / distance(light, worldPosition.xyz);
+          vViewDirection = normalize(cameraPosition - worldPosition.xyz);
+          float lightDist = 1.0 / distance(light, worldPosition.xyz * vec3(1., 10., 1.));
           float diff = max(dot(lightDir, transformed), 0.0);
-          vLight = diff * lightDist;
+          
+          float ripple = mix(n1 * noiseAmp1, length(transformed) * (n2 * noiseAmp2 + n3 * noiseAmp3), f);
+
+          float rippleDiff = max(ripple, 0.0);
+          vLight = diff * lightDist + rippleDiff * 2.;
           vMorph = clamp(morph, 0.0, 1.0);
           vPosition = transformed;
-          vViewDirection = normalize(cameraPosition - worldPosition.xyz);
         `
         );
 
         shader.fragmentShader = `
+        uniform vec3 waveColor;
+        uniform vec3 waveLightColor;
+
         varying float vLight;
         varying float vMorph;
         varying vec3 vPosition;
@@ -691,11 +761,11 @@
           float closestPoint = dot(vViewDirection, vPosition);
           float sphereAlpha = smoothstep(0.0, 0.6, closestPoint);
           float sphereColorFactor = smoothstep(1.1, 1.3, closestPoint);
-          vec3 sphereColor = mix(vec3(0.55, 0.06, 0.0125), diffuseColor.rgb, sphereColorFactor);
+          vec3 sphereColor = mix(vec3(0.125, 0.015, 0.0025), diffuseColor.rgb, sphereColorFactor);
           vec3 sphereLightColor = mix(vec3(1., 0.12, 0.025), vec3(1., 0.63, 0.15), sphereColorFactor);
-          vec3 lightColor = mix(vec3(0.5, 0.315, 0.075), sphereLightColor, vMorph);
+          vec3 lightColor = mix(waveLightColor, sphereLightColor, pow(vMorph, 5.5));
           
-          diffuseColor.rgb = mix(diffuseColor.rgb, sphereColor, vMorph);
+          diffuseColor.rgb = mix(waveColor, sphereColor, pow(vMorph, 5.5));
           diffuseColor.a = mix(diffuseColor.a * 0.4, sphereAlpha, vMorph);
           outgoingLight = diffuseColor.rgb + (lightColor * vLight * 1.1);
           `
@@ -712,8 +782,8 @@
           noiseAmp2: gu.noiseAmp2,
           noiseAmp3: gu.noiseAmp3,
           fresnelBias: { value: 0.0 },
-          fresnelScale: { value: 0.0002 },
-          fresnelPower: { value: 11.1 },
+          fresnelScale: { value: 0.02 },
+          fresnelPower: { value: 7.1 },
           instanceId: { value: instanceId }
         });
         shader.vertexShader = `
@@ -754,6 +824,8 @@
           uniform float fresnelBias;
           uniform float fresnelScale;
           uniform float fresnelPower;
+          uniform float time;
+
           varying vec3 vWorldPosition;
           ${shader.fragmentShader}
         `;
@@ -761,8 +833,9 @@
         shader.fragmentShader = shader.fragmentShader.replace(
           `#include <clipping_planes_fragment>`,
           `#include <clipping_planes_fragment>
-            vec3 viewDirection = normalize(cameraPosition + vec3(-3., 3., 0.) - vWorldPosition);
-            float fresnelFactor = fresnelBias + fresnelScale * pow(1.9 - dot(vNormal, viewDirection), fresnelPower);
+            vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
+            float power = fresnelPower * dot(vec3(sin(-time) * 0.3, -0.5, 0.), vWorldPosition);
+            float fresnelFactor = fresnelBias + fresnelScale * pow(1.9 - dot(vNormal, viewDirection), power);
           `
         );
 
@@ -770,7 +843,7 @@
           `#include <dithering_fragment>`,
           `
             #include <dithering_fragment>
-            gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.99, 0.1, 0.), fresnelFactor);
+            gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.99, 0.1, 0.), clamp(fresnelFactor, 0., 1.));
           `
         );
       };
@@ -824,9 +897,9 @@
           // opacity: 0.0,
           // transparent: true,
           // alphaTest: 0.5,
-          // map: pointsMap,
-          depthTest: true,
-          depthWrite: true,
+          // alphaMap: pointsMap,
+          // depthTest: true,
+          // depthWrite: true,
           blending: THREE.AdditiveBlending,
           onBeforeCompile: Points_onBeforeCompile(i)
         });
@@ -882,15 +955,15 @@
             sphereMesh.material.opacity = lerp(
               0,
               0.75,
-              Math.pow(firstScreenMorph, 4)
+              Math.pow(firstScreenMorph, 16)
             );
 
             pointsMesh.material.opacity = 1;
 
             sphereMesh.scale.set(
-              lerp(0, 1, firstScreenMorph),
-              lerp(0, 1, firstScreenMorph),
-              lerp(0, 1, firstScreenMorph)
+              lerp(0.9, 1, firstScreenMorph),
+              lerp(0.9, 1, firstScreenMorph),
+              lerp(0.9, 1, firstScreenMorph)
             );
           } else {
             if (secondScreenMorph > 0) {
@@ -950,6 +1023,29 @@
       function animate() {
         gu.time.value += clock.getDelta() * anim.speed;
         requestAnimationFrame(animate);
+
+        const angle = -Math.PI * 0.5;
+        const diff = Math.PI * 0.2;
+        const lightX = Math.sin(-gu.time.value * backgroundSettings.speed.value) *
+          backgroundSettings.amplitude.value
+        const angleRadians = Math.atan2(lightX, 1);
+        const timeDiff = angleRadians;
+
+        lights[0].position.set(
+          Math.cos(angle + diff + timeDiff) * 4,
+          Math.sin(angle + diff + timeDiff) * 4,
+          1.5
+        );
+        lights[1].position.set(
+          Math.cos(angle + timeDiff) * 4,
+          Math.sin(angle + timeDiff) * 4,
+          1.5
+        );
+        lights[2].position.set(
+          Math.cos(angle - diff + timeDiff) * 4,
+          Math.sin(angle - diff + timeDiff) * 4,
+          1.5
+        );
 
         // Обновляем все параметры BokehShader
         Object.keys(settings).forEach((key) => {
