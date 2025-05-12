@@ -220,7 +220,7 @@
         mouse: { value: [0, 0] },
         scrollY: { value: window.scrollY },
         light: { value: [0, 0, 0] },
-        pointSize: { value: 0.18 },
+        pointSize: { value: 0.09 },
         maxPointSize: { value: 3 },
 
         fresnelColor: { value: [0.01, 0.01, 0.01] },
@@ -269,7 +269,7 @@
 
       const waveSettings = {
         color: { value: [0.55, 0.06, 0.0125] },
-        pointSize: { value: 0.36 },
+        pointSize: { value: 0.18 },
       };
 
       const waveGroup = gui.addFolder("Wave");
@@ -775,8 +775,8 @@
           const { sphere } = item;
 
           sphere.material.size = lerp(
-            waveSettings.pointSize.value / dpr,
-            gu.pointSize.value / dpr,
+            waveSettings.pointSize.value,
+            gu.pointSize.value,
             firstScreenMorph
           );
         });
@@ -790,10 +790,10 @@
         const firstScreenMorph = clamp(gu.morph.value, 0, 1);
         const secondScreenMorph = clamp(gu.morph.value - 4.0, 0, 1);
 
+        updatePointSize();
+
         spheres.forEach((item, index) => {
           const { sphere } = item;
-
-          updatePointSize();
 
           if (index === 0) {
             sphere.visible = true;
