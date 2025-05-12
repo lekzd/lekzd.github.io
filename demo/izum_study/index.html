@@ -32,66 +32,145 @@
   </head>
   <body>
     <canvas id="canvas"></canvas>
-    <script lang="glsl" type="fragment" id="snoise4">
-      //	Simplex 4D Noise
-      //	by Ian McEwan, Ashima Arts
+    <script id="noiseFS" type="x-shader/x-fragment">
+      //	Classic Perlin 3D Noise
+      //	by Stefan Gustavson
       //
-      vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x,289.0);}
-      float permute(float x){return floor(mod(((x*34.0)+1.0)*x,289.0));}
+      vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
       vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
-      float taylorInvSqrt(float r){return 1.79284291400159 - 0.85373472095314 * r;}
-      vec4 grad4(float j, vec4 ip){
-        const vec4 ones = vec4(1.0,1.0,1.0,-1.0);
-        vec4 p,s;
-        p.xyz = floor(fract(vec3(j)*ip.xyz)*7.0)*ip.z - 1.0;
-        p.w   = 1.5 - dot(abs(p.xyz), ones.xyz);
-        s     = vec4(lessThan(p, vec4(0.0)));
-        p.xyz = p.xyz + (s.xyz*2.0 - 1.0)*s.www;
-        return p;
-      }
-      float snoise4(vec4 v){
-        const vec2 C = vec2(0.138196601125010504, 0.309016994374947451);
-        vec4 i = floor(v + dot(v, C.yyyy));
-        vec4 x0 = v - i + dot(i, C.xxxx);
-        vec4 i0;
-        vec3 isX  = step(x0.yzw, x0.xxx);
-        vec3 isYZ = step(x0.zww, x0.yyz);
-        i0.x = isX.x + isX.y + isX.z;
-        i0.yzw = 1.0 - isX;
-        i0.y += isYZ.x + isYZ.y;
-        i0.zw += 1.0 - isYZ.xy;
-        i0.z += isYZ.z;
-        i0.w += 1.0 - isYZ.z;
-        vec4 i3 = clamp(i0, 0.0, 1.0);
-        vec4 i2 = clamp(i0 - 1.0, 0.0, 1.0);
-        vec4 i1 = clamp(i0 - 2.0, 0.0, 1.0);
-        vec4 x1 = x0 - i1 + C.xxxx;
-        vec4 x2 = x0 - i2 + C.xxxx*2.0;
-        vec4 x3 = x0 - i3 + C.xxxx*3.0;
-        vec4 x4 = x0 - 1.0 + C.xxxx*4.0;
-        i = mod(i, 289.0);
-        float j0 = permute(permute(permute(permute(i.w)+i.z)+i.y)+i.x);
-        vec4 j1 = permute(permute(permute(permute(
-          i.w + vec4(i1.w,i2.w,i3.w,1.0)) +
-          i.z + vec4(i1.z,i2.z,i3.z,1.0)) +
-          i.y + vec4(i1.y,i2.y,i3.y,1.0)) +
-          i.x + vec4(i1.x,i2.x,i3.x,1.0));
-        vec4 ip = vec4(1.0/294.0,1.0/49.0,1.0/7.0,0.0);
-        vec4 p0 = grad4(j0, ip), p1 = grad4(j1.x, ip),
-            p2 = grad4(j1.y, ip), p3 = grad4(j1.z, ip),
-            p4 = grad4(j1.w, ip);
-        vec4 norm = taylorInvSqrt(vec4(
-          dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)
-        ));
-        p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-        p4 *= taylorInvSqrt(dot(p4,p4));
-        vec3 m0 = max(0.6 - vec3(dot(x0,x0),dot(x1,x1),dot(x2,x2)), 0.0);
-        vec2 m1 = max(0.6 - vec2(dot(x3,x3),dot(x4,x4)), 0.0);
-        m0 *= m0; m1 *= m1;
-        return 49.0 * (
-          dot(m0*m0, vec3(dot(p0,x0),dot(p1,x1),dot(p2,x2))) +
-          dot(m1*m1, vec2(dot(p3,x3),dot(p4,x4)))
-        );
+      vec4 fade(vec4 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
+
+      float cnoise(vec4 P){
+        vec4 Pi0 = floor(P); // Integer part for indexing
+        vec4 Pi1 = Pi0 + 1.0; // Integer part + 1
+        Pi0 = mod(Pi0, 289.0);
+        Pi1 = mod(Pi1, 289.0);
+        vec4 Pf0 = fract(P); // Fractional part for interpolation
+        vec4 Pf1 = Pf0 - 1.0; // Fractional part - 1.0
+        vec4 ix = vec4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
+        vec4 iy = vec4(Pi0.yy, Pi1.yy);
+        vec4 iz0 = vec4(Pi0.zzzz);
+        vec4 iz1 = vec4(Pi1.zzzz);
+        vec4 iw0 = vec4(Pi0.wwww);
+        vec4 iw1 = vec4(Pi1.wwww);
+
+        vec4 ixy = permute(permute(ix) + iy);
+        vec4 ixy0 = permute(ixy + iz0);
+        vec4 ixy1 = permute(ixy + iz1);
+        vec4 ixy00 = permute(ixy0 + iw0);
+        vec4 ixy01 = permute(ixy0 + iw1);
+        vec4 ixy10 = permute(ixy1 + iw0);
+        vec4 ixy11 = permute(ixy1 + iw1);
+
+        vec4 gx00 = ixy00 / 7.0;
+        vec4 gy00 = floor(gx00) / 7.0;
+        vec4 gz00 = floor(gy00) / 6.0;
+        gx00 = fract(gx00) - 0.5;
+        gy00 = fract(gy00) - 0.5;
+        gz00 = fract(gz00) - 0.5;
+        vec4 gw00 = vec4(0.75) - abs(gx00) - abs(gy00) - abs(gz00);
+        vec4 sw00 = step(gw00, vec4(0.0));
+        gx00 -= sw00 * (step(0.0, gx00) - 0.5);
+        gy00 -= sw00 * (step(0.0, gy00) - 0.5);
+
+        vec4 gx01 = ixy01 / 7.0;
+        vec4 gy01 = floor(gx01) / 7.0;
+        vec4 gz01 = floor(gy01) / 6.0;
+        gx01 = fract(gx01) - 0.5;
+        gy01 = fract(gy01) - 0.5;
+        gz01 = fract(gz01) - 0.5;
+        vec4 gw01 = vec4(0.75) - abs(gx01) - abs(gy01) - abs(gz01);
+        vec4 sw01 = step(gw01, vec4(0.0));
+        gx01 -= sw01 * (step(0.0, gx01) - 0.5);
+        gy01 -= sw01 * (step(0.0, gy01) - 0.5);
+
+        vec4 gx10 = ixy10 / 7.0;
+        vec4 gy10 = floor(gx10) / 7.0;
+        vec4 gz10 = floor(gy10) / 6.0;
+        gx10 = fract(gx10) - 0.5;
+        gy10 = fract(gy10) - 0.5;
+        gz10 = fract(gz10) - 0.5;
+        vec4 gw10 = vec4(0.75) - abs(gx10) - abs(gy10) - abs(gz10);
+        vec4 sw10 = step(gw10, vec4(0.0));
+        gx10 -= sw10 * (step(0.0, gx10) - 0.5);
+        gy10 -= sw10 * (step(0.0, gy10) - 0.5);
+
+        vec4 gx11 = ixy11 / 7.0;
+        vec4 gy11 = floor(gx11) / 7.0;
+        vec4 gz11 = floor(gy11) / 6.0;
+        gx11 = fract(gx11) - 0.5;
+        gy11 = fract(gy11) - 0.5;
+        gz11 = fract(gz11) - 0.5;
+        vec4 gw11 = vec4(0.75) - abs(gx11) - abs(gy11) - abs(gz11);
+        vec4 sw11 = step(gw11, vec4(0.0));
+        gx11 -= sw11 * (step(0.0, gx11) - 0.5);
+        gy11 -= sw11 * (step(0.0, gy11) - 0.5);
+
+        vec4 g0000 = vec4(gx00.x,gy00.x,gz00.x,gw00.x);
+        vec4 g1000 = vec4(gx00.y,gy00.y,gz00.y,gw00.y);
+        vec4 g0100 = vec4(gx00.z,gy00.z,gz00.z,gw00.z);
+        vec4 g1100 = vec4(gx00.w,gy00.w,gz00.w,gw00.w);
+        vec4 g0010 = vec4(gx10.x,gy10.x,gz10.x,gw10.x);
+        vec4 g1010 = vec4(gx10.y,gy10.y,gz10.y,gw10.y);
+        vec4 g0110 = vec4(gx10.z,gy10.z,gz10.z,gw10.z);
+        vec4 g1110 = vec4(gx10.w,gy10.w,gz10.w,gw10.w);
+        vec4 g0001 = vec4(gx01.x,gy01.x,gz01.x,gw01.x);
+        vec4 g1001 = vec4(gx01.y,gy01.y,gz01.y,gw01.y);
+        vec4 g0101 = vec4(gx01.z,gy01.z,gz01.z,gw01.z);
+        vec4 g1101 = vec4(gx01.w,gy01.w,gz01.w,gw01.w);
+        vec4 g0011 = vec4(gx11.x,gy11.x,gz11.x,gw11.x);
+        vec4 g1011 = vec4(gx11.y,gy11.y,gz11.y,gw11.y);
+        vec4 g0111 = vec4(gx11.z,gy11.z,gz11.z,gw11.z);
+        vec4 g1111 = vec4(gx11.w,gy11.w,gz11.w,gw11.w);
+
+        vec4 norm00 = taylorInvSqrt(vec4(dot(g0000, g0000), dot(g0100, g0100), dot(g1000, g1000), dot(g1100, g1100)));
+        g0000 *= norm00.x;
+        g0100 *= norm00.y;
+        g1000 *= norm00.z;
+        g1100 *= norm00.w;
+
+        vec4 norm01 = taylorInvSqrt(vec4(dot(g0001, g0001), dot(g0101, g0101), dot(g1001, g1001), dot(g1101, g1101)));
+        g0001 *= norm01.x;
+        g0101 *= norm01.y;
+        g1001 *= norm01.z;
+        g1101 *= norm01.w;
+
+        vec4 norm10 = taylorInvSqrt(vec4(dot(g0010, g0010), dot(g0110, g0110), dot(g1010, g1010), dot(g1110, g1110)));
+        g0010 *= norm10.x;
+        g0110 *= norm10.y;
+        g1010 *= norm10.z;
+        g1110 *= norm10.w;
+
+        vec4 norm11 = taylorInvSqrt(vec4(dot(g0011, g0011), dot(g0111, g0111), dot(g1011, g1011), dot(g1111, g1111)));
+        g0011 *= norm11.x;
+        g0111 *= norm11.y;
+        g1011 *= norm11.z;
+        g1111 *= norm11.w;
+
+        float n0000 = dot(g0000, Pf0);
+        float n1000 = dot(g1000, vec4(Pf1.x, Pf0.yzw));
+        float n0100 = dot(g0100, vec4(Pf0.x, Pf1.y, Pf0.zw));
+        float n1100 = dot(g1100, vec4(Pf1.xy, Pf0.zw));
+        float n0010 = dot(g0010, vec4(Pf0.xy, Pf1.z, Pf0.w));
+        float n1010 = dot(g1010, vec4(Pf1.x, Pf0.y, Pf1.z, Pf0.w));
+        float n0110 = dot(g0110, vec4(Pf0.x, Pf1.yz, Pf0.w));
+        float n1110 = dot(g1110, vec4(Pf1.xyz, Pf0.w));
+        float n0001 = dot(g0001, vec4(Pf0.xyz, Pf1.w));
+        float n1001 = dot(g1001, vec4(Pf1.x, Pf0.yz, Pf1.w));
+        float n0101 = dot(g0101, vec4(Pf0.x, Pf1.y, Pf0.z, Pf1.w));
+        float n1101 = dot(g1101, vec4(Pf1.xy, Pf0.z, Pf1.w));
+        float n0011 = dot(g0011, vec4(Pf0.xy, Pf1.zw));
+        float n1011 = dot(g1011, vec4(Pf1.x, Pf0.y, Pf1.zw));
+        float n0111 = dot(g0111, vec4(Pf0.x, Pf1.yzw));
+        float n1111 = dot(g1111, Pf1);
+
+        vec4 fade_xyzw = fade(Pf0);
+        vec4 n_0w = mix(vec4(n0000, n1000, n0100, n1100), vec4(n0001, n1001, n0101, n1101), fade_xyzw.w);
+        vec4 n_1w = mix(vec4(n0010, n1010, n0110, n1110), vec4(n0011, n1011, n0111, n1111), fade_xyzw.w);
+        vec4 n_zw = mix(n_0w, n_1w, fade_xyzw.z);
+        vec2 n_yzw = mix(n_zw.xy, n_zw.zw, fade_xyzw.y);
+        float n_xyzw = mix(n_yzw.x, n_yzw.y, fade_xyzw.x);
+        return 2.2 * n_xyzw;
       }
     </script>
     <script type="module">
@@ -111,11 +190,10 @@
 
       const gui = new GUI();
 
-      const simplex4 = document.querySelector("#snoise4").textContent;
       const canvas = document.querySelector("#canvas");
-      const dpr = Math.min(window.devicePixelRatio, 1);
-      const width = (canvas.width = window.innerWidth * dpr);
-      const height = (canvas.height = window.innerHeight * dpr);
+      const dpr = Math.min(window.devicePixelRatio, 2);
+      const width = (canvas.width = window.innerWidth * 1);
+      const height = (canvas.height = window.innerHeight * 1);
 
       RectAreaLightUniformsLib.init();
 
@@ -126,11 +204,6 @@
 
       renderer.setSize(width, height);
       renderer.setPixelRatio(dpr);
-      renderer.sortObjects = true;
-      renderer.depthTest = true;
-      renderer.depthWrite = true;
-      renderer.premultipliedAlpha = true;
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
       canvas.style.width = `100vw`;
       canvas.style.height = `100vh`;
 
@@ -138,200 +211,336 @@
       scene.background = new THREE.Color(0x000000);
       scene.fog = new THREE.Fog(0x000000, 3, 12);
 
-      const postprocessing = {};
-
-      const settings = {
-        bias: { value: 0.5 },
-        depthblur: { value: 0 },
-        dithering: { value: 1e-4 },
-        focalDepth: { value: 5.6 },
-        focalLength: { value: 16 },
-        fringe: { value: 0.7 },
-        fstop: { value: 0.42 },
-        gain: { value: 2 },
-        manualdof: { value: 0 },
-        maxblur: { value: 0.8 },
-        noise: { value: 0 },
-        pentagon: { value: 0 },
-        shaderFocus: { value: 0 },
-        showFocus: { value: 0 },
-        threshold: { value: 0.5 },
-        vignetting: { value: 1 },
-        zfar: { value: 150 },
-        znear: { value: 4 }
-      };
-
-      function initPostprocessing() {
-        postprocessing.scene = new THREE.Scene();
-
-        postprocessing.camera = new THREE.OrthographicCamera(
-          window.innerWidth / -2,
-          window.innerWidth / 2,
-          window.innerHeight / 2,
-          window.innerHeight / -2,
-          -10000,
-          10000
-        );
-        postprocessing.camera.position.z = 7.5;
-
-        postprocessing.scene.add(postprocessing.camera);
-
-        postprocessing.rtTextureDepth = new THREE.WebGLRenderTarget(
-          window.innerWidth * dpr,
-          window.innerHeight * dpr,
-          {
-            type: THREE.HalfFloatType,
-            depthBuffer: true,
-            depthTexture: new THREE.DepthTexture()
-          }
-        );
-        postprocessing.rtTextureColor = new THREE.WebGLRenderTarget(
-          window.innerWidth * dpr,
-          window.innerHeight * dpr,
-          {
-            type: THREE.HalfFloatType,
-            depthBuffer: true
-          }
-        );
-
-        const bokeh_shader = BokehShader;
-
-        postprocessing.bokeh_uniforms = THREE.UniformsUtils.clone(
-          bokeh_shader.uniforms
-        );
-
-        // Инициализируем все параметры
-        Object.keys(settings).forEach((key) => {
-          postprocessing.bokeh_uniforms[key].value = settings[key].value;
-        });
-
-        postprocessing.bokeh_uniforms["tColor"].value =
-          postprocessing.rtTextureColor.texture;
-        postprocessing.bokeh_uniforms["tDepth"].value =
-          postprocessing.rtTextureDepth.depthTexture;
-        postprocessing.bokeh_uniforms["textureWidth"].value =
-          window.innerWidth * dpr;
-        postprocessing.bokeh_uniforms["textureHeight"].value =
-          window.innerHeight * dpr;
-
-        postprocessing.bokeh_uniforms["znear"].value = camera.near;
-        postprocessing.bokeh_uniforms["zfar"].value = camera.far;
-
-        postprocessing.materialBokeh = new THREE.ShaderMaterial({
-          uniforms: postprocessing.bokeh_uniforms,
-          vertexShader: bokeh_shader.vertexShader,
-          fragmentShader: bokeh_shader.fragmentShader,
-          defines: {
-            RINGS: 2,
-            SAMPLES: 4
-          }
-        });
-
-        postprocessing.quad = new THREE.Mesh(
-          new THREE.PlaneGeometry(window.innerWidth, window.innerHeight),
-          postprocessing.materialBokeh
-        );
-        postprocessing.quad.position.z = -500;
-        postprocessing.scene.add(postprocessing.quad);
-
-        const depthBlurGroup = gui.addFolder("DepthBlur");
-
-        // Настраиваем более подходящие диапазоны для каждого параметра
-        depthBlurGroup
-          .add(settings.focalDepth, "value", 0, 20)
-          .name("focalDepth")
-          .onChange((value) => {
-            postprocessing.bokeh_uniforms["focalDepth"].value = value;
-          });
-        depthBlurGroup
-          .add(settings.fstop, "value", 0.1, 10)
-          .name("fstop")
-          .onChange((value) => {
-            postprocessing.bokeh_uniforms["fstop"].value = value;
-          });
-        depthBlurGroup
-          .add(settings.maxblur, "value", 0, 5)
-          .name("maxblur")
-          .onChange((value) => {
-            postprocessing.bokeh_uniforms["maxblur"].value = value;
-          });
-        depthBlurGroup
-          .add(settings.threshold, "value", 0, 1)
-          .name("threshold")
-          .onChange((value) => {
-            postprocessing.bokeh_uniforms["threshold"].value = value;
-          });
-        depthBlurGroup
-          .add(settings.gain, "value", 0, 10)
-          .name("gain")
-          .onChange((value) => {
-            postprocessing.bokeh_uniforms["gain"].value = value;
-          });
-        depthBlurGroup
-          .add(settings.manualdof, "value", false, true)
-          .name("manualdof")
-          .onChange((value) => {
-            postprocessing.bokeh_uniforms["manualdof"].value = value;
-          });
-        depthBlurGroup
-          .add(settings.shaderFocus, "value", false, true)
-          .name("shaderFocus")
-          .onChange((value) => {
-            postprocessing.bokeh_uniforms["shaderFocus"].value = value;
-          });
-      }
-
       // =====================
       // Uniforms for GUI
       // =====================
       const gu = {
         time: { value: 0 },
         morph: { value: 0 },
-        shift: { value: 0 },
-        noisePosScale: { value: 0.3 },
-        noiseTimeScale: { value: 0.2 },
-        noiseAmp1: { value: 0.65 },
-        noiseAmp2: { value: 0.15 },
-        noiseAmp3: { value: 0.15 },
         mouse: { value: [0, 0] },
         scrollY: { value: window.scrollY },
         light: { value: [0, 0, 0] },
-        offset: { value: 2 },
-        focalDepth: { value: 7 }
+        pointSize: { value: 0.18 },
+        maxPointSize: { value: 3 },
+
+        fresnelColor: { value: [0.01, 0.01, 0.01] },
+        lightColor: { value: [0.99, 0.2, 0] },
+        mouseLightColor: { value: [0.95, 0.41, 0.22] },
+        sphereColor1: { value: [0.99, 0.23, 0.12] },
+        sphereColor2: { value: [1, 0.51, 0.21] },
+        waveColor: { value: [0.44, 0.66, 0.99] },
+        noiseAmplitude: { value: 0.18 },
+        noiseDensity: { value: 3.9 },
+        timeScale: { value: 0.5 },
+        blurPower: { value: 5.5 },
       };
 
-      const raycaster = new THREE.Raycaster();
-      const pointer = new THREE.Vector2();
+      const sceneGroup = gui.addFolder("Scene");
+
+      sceneGroup
+        .addColor(gu.lightColor, "value")
+        .name("lightColor")
+        .onChange((value) => {
+          gu.lightColor.value = value;
+          lights.forEach((light) => {
+            light.color.set(...value);
+          });
+        });
+
+      sceneGroup
+        .addColor(gu.mouseLightColor, "value")
+        .name("mouseLightColor")
+
+      const sphereGroup = gui.addFolder("Sphere");
+
+      sphereGroup.addColor(gu.sphereColor1, "value").name("color1");
+      sphereGroup.addColor(gu.sphereColor2, "value").name("color2");
+      sphereGroup.addColor(gu.fresnelColor, "value").name("colorOut");
+      sphereGroup.add(gu.pointSize, "value", 0.01, 0.5, 0.01).name("pointSize")
+        .onChange((value) => {
+          updatePointSize();
+        });
+
+      sphereGroup.add(gu.maxPointSize, "value", 0.0, 10, 0.1).name("blurAmount");
+      sphereGroup.add(gu.noiseAmplitude, "value", 0.0, 1, 0.01).name("noiseAmplitude");
+      sphereGroup.add(gu.noiseDensity, "value", 0.0, 10, 0.1).name("noiseDensity");
+      sphereGroup.add(gu.timeScale, "value", 0.0, 1, 0.01).name("timeScale");
+      sphereGroup.add(gu.blurPower, "value", 0.0, 10, 0.1).name("blurPower");
+
+      const waveSettings = {
+        color: { value: [0.55, 0.06, 0.0125] },
+        pointSize: { value: 0.36 },
+      };
+
+      const waveGroup = gui.addFolder("Wave");
+
+      waveGroup.addColor(waveSettings.color, "value").name("color");
+      waveGroup.add(waveSettings.pointSize, "value", 0.01, 0.5, 0.01).name("pointSize")
+        .onChange((value) => {
+          updatePointSize();
+        });
+
+      class WobblingSphere extends THREE.Points {
+        constructor(instanceId) {
+          let vertices = [];
+          // https://web.archive.org/web/20120107030109/http://cgafaq.info/wiki/Evenly_distributed_points_on_sphere#Spirals
+          let p = new THREE.Vector3();
+          let counter = 30000;
+          let rad = 1;
+
+          let r = 0;
+          let dlong = Math.PI * (3 - Math.sqrt(15));
+          let dz = 2 / counter;
+          let long = 0;
+          let z = 1 - dz / 2;
+
+          for (let i = 0; i < counter; i++) {
+            r = Math.sqrt(1 - z * z);
+            p.set(
+              Math.cos(long) * r, 
+              z, 
+              -Math.sin(long) * r
+            )
+            .applyAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI * 1.33)
+              .multiplyScalar(
+                rad
+              );
+
+            z = z - dz;
+            long = long + dlong;
+
+            vertices.push(p.clone());
+          }
+
+          const g = new THREE.BufferGeometry()
+            .setFromPoints(vertices);
+
+          const pointsGeometry = new THREE.PlaneGeometry(15, 5, 250, 120)
+            .rotateX(-Math.PI * 0.65)
+            .rotateY(0.15)
+            .translate(0, 1, 0);
+
+          pointsGeometry.computeTangents();
+
+          g.setAttribute("altPosition", pointsGeometry.attributes.position);
+          g.setAttribute("tangent", pointsGeometry.attributes.tangent);
+
+          const pointsMaterial = new THREE.PointsMaterial({
+            size: 0.05,
+            vertexColors: true,
+            transparent: true,
+            depthTest: false,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+          });
+
+          super(g, pointsMaterial);
+
+          this.uniforms = {
+            fadeOutMaxSize: gu.maxPointSize,
+            colorIn: gu.sphereColor1,
+            colorCenter: gu.sphereColor2,
+            colorOut: gu.fresnelColor,
+            morph: gu.morph,
+
+            mouse: gu.mouse,
+            light: gu.light,
+            lightColor: gu.lightColor,
+            mouseLightColor: gu.mouseLightColor,
+            instanceId: { value: instanceId },
+            waveColor: waveSettings.color,
+            radius: { value: 2 },
+            noiseAmplitude: gu.noiseAmplitude,
+            noiseDensity: gu.noiseDensity,
+            timeScale: gu.timeScale,
+            blurPower: gu.blurPower,
+            subdivision: { value: [pointsGeometry.parameters.widthSegments, pointsGeometry.parameters.heightSegments] }
+          };
+
+          this.material.onBeforeCompile = (shader) => {
+            shader.uniforms.time = gu.time;
+
+            shader.defines = {
+              USE_TANGENT: ""
+            }
+
+            for (let key in this.uniforms) {
+              shader.uniforms[key] = this.uniforms[key];
+            }
+
+            shader.vertexShader = `
+              uniform float time;
+              uniform float morph;
+              uniform float divisorPlane;
+              uniform float fadeOutMaxSize;
+              
+              uniform vec3 colorIn;
+              uniform vec3 colorCenter;
+              uniform vec3 colorOut;
+              uniform vec3 waveColor;
+              
+              uniform float radius;
+              uniform float noiseAmplitude;
+              uniform float noiseDensity;
+              uniform float timeScale;
+              uniform vec2 subdivision;
+
+              uniform vec2 mouse;
+              uniform vec3 light;
+              uniform vec3 lightColor;
+              uniform vec3 mouseLightColor;
+              uniform float instanceId;
+              uniform float blurPower;
+              
+              varying float fadeOut;
+              varying float zeroLimit;
+              varying float vLight;
+
+              attribute vec3 altPosition;
+
+              ${document.getElementById("noiseFS").textContent}
+              
+              float noise(vec3 p){
+                return cnoise(vec4(p * noiseDensity, time * timeScale));
+              }
+
+              vec3 getPos(vec3 p){
+                return p * (radius + noise(p) * noiseAmplitude);
+              }
+
+              vec3 getWavePos(vec3 p){
+                float moveTime = time * timeScale * 0.3;
+                float moiseTime = time * timeScale * 0.2;
+                vec3 pos = vec3(p.x * 0.2 + moveTime, p.y, p.z * 0.5);
+                float wave = cnoise(vec4(pos * noiseDensity, moiseTime));
+                return p * (radius + wave * noiseAmplitude * 1.75);
+              }
+
+              float addLight(vec3 p, vec3 objectNormal, vec3 light, float power){
+                vec3 lightDir = normalize(light - p);
+                float lightDist = distance(light, p);
+                float attenuation = 1.0 / (lightDist * lightDist);
+                float diff = max(dot(lightDir, normalize(objectNormal)), 0.0);
+
+                return clamp(diff * attenuation * power, 0., 1.);
+              }
+              
+              ${shader.vertexShader}
+            `
+              .replace(
+                `#include <begin_vertex>`,
+                `#include <begin_vertex>
+              
+                vec3 p0 = getPos(position);
+                vec3 p1 = getWavePos(altPosition);
+
+                float d = dot(p0 + 1.5, vec3(0., 1., 0.)) / sqrt(15.);
+                d = sqrt(1. - (1. - d*d)) + dot(p1, vec3(0., 1., 0.)) * 0.01;
+                float f = clamp(morph * 2. - d, 0., 1.);
+
+                transformed = mix(p1, p0, f);
+
+                // Bi tangents
+                float distanceA = (PI * 2.0) / subdivision.y;
+                float distanceB = PI / subdivision.y;
+
+                vec3 biTangent = cross(normal, tangent.xyz);
+
+                vec3 positionA = p1 + tangent.xyz * distanceA;
+                vec3 displacedPositionA = getPos(positionA);
+
+                vec3 positionB = p1 + biTangent.xyz * distanceB;
+                vec3 displacedPositionB = getPos(positionB);
+
+                vec3 waveNormal = cross(displacedPositionA - transformed.xyz, displacedPositionB - transformed.xyz);
+
+                // https://stackoverflow.com/a/39296939/4045502
+
+                float theta = .1; 
+                vec3 vecTangent = normalize(cross(transformed, vec3(1.0, 0.0, 0.0)) + cross(transformed, vec3(0.0, 1.0, 0.0)));
+                vec3 vecBitangent = normalize(cross(vecTangent, transformed));
+                vec3 ptTangentSample = getPos(normalize(transformed + theta * normalize(vecTangent)));
+                vec3 ptBitangentSample = getPos(normalize(transformed + theta * normalize(vecBitangent)));
+
+                vec3 sphereNormal = normalize(cross(ptBitangentSample - transformed, ptTangentSample - transformed));
+                vec3 objectNormal = normalMatrix * mix(waveNormal, sphereNormal, f);
+                ///////////////////////////////////////////////
+                
+                float modelScale = length(modelViewMatrix[0].xyz);
+
+                vec4 mvPos = modelViewMatrix * vec4(transformed, 1.);
+                vec3 mvNor = normalize(-mvPos.xyz) * modelScale;
+                
+                float fNor = dot(mvNor, objectNormal);
+                
+                fadeOut = mix(1.0, fNor, f);
+
+                // VIEW DIRECTION
+
+                vec3 viewDirection = normalize(cameraPosition - mvPos.xyz);
+                float closestPoint = dot(viewDirection, transformed);
+                float sphereColorFactor = smoothstep(1.3, 1.7, closestPoint);
+                vec3 sphereColor = mix(colorIn, colorCenter, sphereColorFactor);
+
+                // FINAL COLOR
+                
+                vec3 color = mix(waveColor, sphereColor, f);
+                vColor = mix(color, colorOut, pow(1. - fadeOut, blurPower));
+
+                // LIGHTS
+
+                vColor += mouseLightColor * addLight(mvPos.xyz, objectNormal, light, 5.0);
+                vColor += lightColor * addLight(mvPos.xyz, objectNormal, vec3(0., -3., -5.), 10.0);
+              `
+              )
+              .replace(
+                `gl_PointSize = size;`,
+                `gl_PointSize = size * mix(1., fadeOutMaxSize, 1. - fadeOut) * modelScale;`
+              );
+
+            shader.fragmentShader = `
+              varying float fadeOut;
+              varying float zeroLimit;
+              varying float vLight;
+              ${shader.fragmentShader}
+            `.replace(
+              `vec4 diffuseColor = vec4( diffuse, opacity );`,
+              `
+              float uvLen = length(gl_PointCoord.xy - 0.5);
+              if (fadeOut < 0. || uvLen > 0.5) discard;
+              vec4 diffuseColor = vec4( diffuse, opacity );
+              
+              float alphaLim = 0.25 + (pow(1. - fadeOut, 4.)) * 0.75;
+              float fa = 1. - smoothstep(0.25, 1., uvLen * 4.);
+              
+              diffuseColor.a = fa * (0.25 + 0.75 *  pow(fadeOut, 4.));
+              `
+            );
+          };
+        }
+      }
 
       const updateSpheresRotation = () => {
-        spheres.forEach((sphere) => {
-          const { sphereMesh, pointsMesh } = sphere;
+        spheres.forEach((item) => {
+          const { sphere } = item;
           const directionToMouse = new THREE.Vector3(
             gu.mouse.value[0],
             gu.mouse.value[1],
             0
           )
-            .sub(sphereMesh.position)
+            .sub(sphere.position)
             .normalize();
+
           const angleX = directionToMouse.x * 0.1;
-          // const angleY = -directionToMouse.y * 0.1 - Math.PI * 0.5;
           const angleY = -directionToMouse.y * 0.1;
 
-          const { clamp } = THREE.MathUtils;
+          const { clamp, lerp } = THREE.MathUtils;
 
           const firstScreenMorph = clamp(gu.morph.value, 0, 1);
-          const amount = 0.1 * firstScreenMorph;
-
-          sphereMesh.rotation.x += (angleY - sphereMesh.rotation.x) * amount;
-          pointsMesh.rotation.x += (angleY - pointsMesh.rotation.x) * amount;
-
-          sphereMesh.rotation.y += (angleX - sphereMesh.rotation.y) * amount;
-          pointsMesh.rotation.y += (angleX - pointsMesh.rotation.y) * amount;
-
-          sphereMesh.rotation.x *= firstScreenMorph;
-          sphereMesh.rotation.y *= firstScreenMorph;
-          pointsMesh.rotation.x *= firstScreenMorph;
-          pointsMesh.rotation.y *= firstScreenMorph;
+          const amount = lerp(0.04, 0.1, firstScreenMorph);
+          
+          sphere.rotation.x += (angleY - sphere.rotation.x) * amount;
+          sphere.rotation.y += (angleX - sphere.rotation.y) * amount;
         });
       };
 
@@ -339,14 +548,12 @@
         const x = (e.clientX / window.innerWidth - 0.5) * 10;
         const y = -(e.clientY / window.innerHeight - 0.5) * 10;
 
-        pointer.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-        pointer.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-        raycaster.setFromCamera(pointer, camera);
-
         gu.mouse.value = [x, y];
 
-        keyLight.position.set(x, y, 5);
-        gu.light.value = [x, y, 5];
+        const lightZ = -3.5;
+
+        mouseLight.position.set(x, y, lightZ);
+        gu.light.value = [x, y, lightZ];
 
         updateSpheresRotation();
       });
@@ -438,17 +645,6 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
       });
 
-      const composer = new EffectComposer(renderer);
-      composer.addPass(new RenderPass(scene, camera));
-
-      const bokehPass = new BokehPass(scene, camera, {
-        focus: 6.0,
-        aperture: 0.0005,
-        maxblur: 0.01
-      });
-
-      bokehPass.needsSwap = true;
-
       const backgroundGroup = gui.addFolder("Background");
 
       backgroundGroup
@@ -476,126 +672,25 @@
           backgroundMaterial.uniforms.speed.value = value;
         });
 
-      const bokehGroup = gui.addFolder("Bokeh");
-
-      // bokeh settings
-      bokehGroup.add(bokehPass.uniforms.focus, "value", 0, 10).name("focus");
-      bokehGroup
-        .add(bokehPass.uniforms.aperture, "value", 0, 0.1)
-        .name("aperture");
-      bokehGroup.add(bokehPass.uniforms.maxblur, "value", 0, 1).name("maxblur");
-
-      const bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(innerWidth, innerHeight),
-        1.5,
-        0.4,
-        0.85
-      );
-
-      bloomPass.strength = 0.41;
-      bloomPass.threshold = 0.296;
-      bloomPass.radius = 0.1;
-
-      const bloomGroup = gui.addFolder("Bloom");
-
-      bloomGroup.add(bloomPass, "strength", 0, 10).name("strength");
-      bloomGroup.add(bloomPass, "threshold", 0, 1).name("threshold");
-      bloomGroup.add(bloomPass, "radius", 0, 1).name("radius");
-
-      const outputPass = new OutputPass();
-
-      // composer.addPass(bokehPass);
-      composer.addPass(bloomPass);
-      composer.addPass(outputPass);
-
-      // =====================
-      // toSphere Helper
-      // =====================
-      function toSphere(geom, radius) {
-        const posAttr = geom.attributes.position;
-        const cnt = posAttr.count;
-
-        const positions = [];
-        for (let i = 0; i < cnt; i++) {
-          positions.push([posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i)]);
-        }
-
-        // Генерация точек на сфере
-        const rows = Math.ceil(Math.sqrt(cnt));
-        const cols = Math.ceil(cnt / rows);
-
-        const altPoints = [];
-
-        for (let i = 0; i < rows; i++) {
-          const phi = Math.PI * (i / (rows - 1));
-
-          for (let j = 0; j < cols && altPoints.length < cnt; j++) {
-            const theta = 2 * Math.PI * (j / cols);
-
-            const x = radius * Math.sin(phi) * Math.cos(theta);
-            const y = radius * Math.cos(phi);
-            const z = radius * Math.sin(phi) * Math.sin(theta);
-
-            altPoints.push([x, y, z]);
-          }
-        }
-
-        // Создаём массив индексов для сортировки
-        const indices = altPoints.map((p, i) => i);
-
-        // Сортируем индексы по Y -> atan2(Z, X)
-        indices.sort((a, b) => {
-          const aY = Math.round(altPoints[a][1] * 1000);
-          const bY = Math.round(altPoints[b][1] * 1000);
-          if (aY !== bY) return bY - aY;
-
-          const aAngle = Math.atan2(altPoints[a][1], altPoints[a][0]);
-          const bAngle = Math.atan2(altPoints[b][1], altPoints[b][0]);
-          return aAngle - bAngle;
-        });
-
-        positions.sort((a, b) => {
-          const aY = Math.round(a[1] * 1000);
-          const bY = Math.round(b[1] * 1000);
-          if (aY !== bY) return bY - aY;
-          return b[1] - a[1];
-        });
-
-        altPoints.sort((a, b) => {
-          const r = () => Math.random() * 0.5;
-          const aY = Math.round((a[1] + r()) * 1000);
-          const bY = Math.round((b[1] + r()) * 1000);
-          if (aY !== bY) return bY - aY;
-          return (a[0] + r()) - (b[0] + r());
-        });
-
-        // Заменим оригинальный position на отсортированный
-        geom.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(positions.flat(), 3)
-        );
-
-        geom.setAttribute(
-          "altPosition",
-          new THREE.Float32BufferAttribute(altPoints.flat(), 3)
-        );
-      }
-
       // =====================
       // Lights
       // =====================
       const lightsDebug = false;
 
       scene.add(new THREE.AmbientLight(0x222222, 0.5));
-      const keyLight = new THREE.PointLight(0xff5500, 1.2, 0);
-      keyLight.position.set(3, -3, 3);
+      const mouseLight = new THREE.PointLight(
+        new THREE.Color(...gu.mouseLightColor.value),
+        1.2,
+        0
+      );
+      mouseLight.position.set(3, -3, 3);
 
       if (lightsDebug) {
-        const keyLightDebug = new THREE.PointLightHelper(keyLight, 0.1);
+        const keyLightDebug = new THREE.PointLightHelper(mouseLight, 0.1);
         scene.add(keyLightDebug);
       }
 
-      scene.add(keyLight);
+      scene.add(mouseLight);
 
       const getRectLight = (x, y, z) => {
         const rectWidth = 5;
@@ -603,7 +698,7 @@
         const intensity = 0.1;
 
         const rectLight = new THREE.RectAreaLight(
-          0x993301,
+          new THREE.Color(...gu.lightColor.value),
           intensity,
           rectWidth,
           rectHeight
@@ -622,309 +717,44 @@
 
       const angle = -Math.PI * 0.5;
       const diff = Math.PI * 0.2;
+      const lightDistance = 8;
+      const lightZ = 1.5;
 
       const lights = [
         getRectLight(
-          Math.cos(angle + diff) * 4,
-          Math.sin(angle + diff) * 4,
-          1.5
+          Math.cos(angle + diff) * lightDistance,
+          Math.sin(angle + diff) * lightDistance,
+          lightZ
         ),
-        getRectLight(Math.cos(angle) * 4, Math.sin(angle) * 4, 1.5),
         getRectLight(
-          Math.cos(angle - diff) * 4,
-          Math.sin(angle - diff) * 4,
-          1.5
+          Math.cos(angle) * lightDistance,
+          Math.sin(angle) * lightDistance,
+          lightZ
+        ),
+        getRectLight(
+          Math.cos(angle - diff) * lightDistance,
+          Math.sin(angle - diff) * lightDistance,
+          lightZ
         )
       ];
 
       scene.add(...lights);
 
-      // =====================
-      // Geometry + Points
-      // =====================
-      const pointsGeometry = new THREE.PlaneGeometry(30, 10, 350, 200)
-        .rotateX(-Math.PI * 0.65)
-        .rotateY(0.15)
-        .translate(0, 1, 0);
-      pointsGeometry.index = null;
-      toSphere(pointsGeometry, 2);
-
-      const distance = (x, y) => {
-        return Math.sqrt(x * x + y * y);
-      };
-
-      const waveSettings = {
-        color: { value: [0.55, 0.06, 0.0125] },
-        lightColor: { value: [1., 0.12, 0.025] },
-      };
-
-      const waveGroup = gui.addFolder("Wave");
-
-      waveGroup.addColor(waveSettings.color, "value").name("color");
-      waveGroup.addColor(waveSettings.lightColor, "value").name("lightColor");
-
-      const Points_onBeforeCompile = (instanceId) => (shader) => {
-        // inject all uniforms
-        Object.assign(shader.uniforms, {
-          time: gu.time,
-          morph: gu.morph,
-          shift: gu.shift,
-          noisePosScale: gu.noisePosScale,
-          noiseTimeScale: gu.noiseTimeScale,
-          noiseAmp1: gu.noiseAmp1,
-          noiseAmp2: gu.noiseAmp2,
-          noiseAmp3: gu.noiseAmp3,
-          mouse: gu.mouse,
-          light: gu.light,
-          instanceId: { value: instanceId },
-          waveColor: waveSettings.color,
-          waveLightColor: waveSettings.lightColor
-        });
-        shader.vertexShader = `
-          uniform float time;
-          uniform float morph;
-          uniform float shift;
-          uniform float noisePosScale;
-          uniform float noiseTimeScale;
-          uniform float noiseAmp1;
-          uniform float noiseAmp2;
-          uniform float noiseAmp3;
-          uniform vec2 mouse;
-          uniform vec3 light;
-          uniform float instanceId;
-          attribute vec3 altPosition;
-
-          varying float vLight;
-          varying float vMorph;
-          varying vec3 vPosition;
-          varying vec3 vViewDirection;
-          ${simplex4}
-          ${shader.vertexShader}
-        `.replace(
-          `#include <begin_vertex>`,
-          `#include <begin_vertex>
-          float t = time * noiseTimeScale;
-          vec3 pos1 = position;
-          vec3 pos2 = altPosition;
-          float n1 = snoise4(vec4(pos1 * vec3(0.5, 1., 1.5) * noisePosScale + vec3(t, 0., 0.), t + instanceId));
-          float n2 = snoise4(vec4(normalize(pos2), t + instanceId));
-          float n3 = snoise4(vec4(normalize(pos2) * 2., t + instanceId));
-          pos1.y += n1 * noiseAmp1;
-          pos2   += normalize(pos2) * (n2 * noiseAmp2 + n3 * noiseAmp3);
-          pos2.y += shift;
-          float d = length(pos1.zy + vec2(0., 7.5)) / (7.5 * sqrt(2.));
-          d = sqrt(1. - (1. - d*d)) + pos1.z * 0.1;
-          float f = clamp(morph * 2. - d, 0., 1.);
-
-          vec3 direction = normalize(vec3(mouse.x, 0.0, mouse.y) - pos1);
-          pos1 += direction * 0.2;
-
-          transformed = mix(pos1, pos2, f);
-
-          vec4 worldPosition = modelMatrix * vec4(transformed, 1.0);
-          vec3 lightDir = light - worldPosition.xyz;
-
-          vViewDirection = normalize(cameraPosition - worldPosition.xyz);
-          float lightDist = 1.0 / distance(light, worldPosition.xyz * vec3(1., 10., 1.));
-          float diff = max(dot(lightDir, transformed), 0.0);
-          
-          float ripple = mix(n1 * noiseAmp1, length(transformed) * (n2 * noiseAmp2 + n3 * noiseAmp3), f);
-
-          float rippleDiff = max(ripple, 0.0);
-          vLight = diff * lightDist + rippleDiff * 2.;
-          vMorph = clamp(morph, 0.0, 1.0);
-          vPosition = transformed;
-        `
-        );
-
-        shader.fragmentShader = `
-        uniform vec3 waveColor;
-        uniform vec3 waveLightColor;
-
-        varying float vLight;
-        varying float vMorph;
-        varying vec3 vPosition;
-        varying vec3 vViewDirection;
-        ${shader.fragmentShader}
-      `;
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-          `#include <clipping_planes_fragment>`,
-          `#include <clipping_planes_fragment>
-                  if (length(gl_PointCoord.xy - 0.5) > 0.5) discard;
-                `
-        );
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-          `outgoingLight = diffuseColor.rgb;`,
-          `
-          float closestPoint = dot(vViewDirection, vPosition);
-          float sphereAlpha = smoothstep(0.0, 0.6, closestPoint);
-          float sphereColorFactor = smoothstep(1.1, 1.3, closestPoint);
-          vec3 sphereColor = mix(vec3(0.125, 0.015, 0.0025), diffuseColor.rgb, sphereColorFactor);
-          vec3 sphereLightColor = mix(vec3(1., 0.12, 0.025), vec3(1., 0.63, 0.15), sphereColorFactor);
-          vec3 lightColor = mix(waveLightColor, sphereLightColor, pow(vMorph, 5.5));
-          
-          diffuseColor.rgb = mix(waveColor, sphereColor, pow(vMorph, 5.5));
-          diffuseColor.a = mix(diffuseColor.a * 0.4, sphereAlpha, vMorph);
-          outgoingLight = diffuseColor.rgb + (lightColor * vLight * 1.1);
-          `
-        );
-      };
-
-      const Sphere_onBeforeCompile = (instanceId) => (shader) => {
-        Object.assign(shader.uniforms, {
-          time: gu.time,
-          shift: gu.shift,
-          noisePosScale: { value: 0.7 },
-          noiseTimeScale: gu.noiseTimeScale,
-          noiseAmp1: gu.noiseAmp1,
-          noiseAmp2: gu.noiseAmp2,
-          noiseAmp3: gu.noiseAmp3,
-          fresnelBias: { value: 0.0 },
-          fresnelScale: { value: 0.02 },
-          fresnelPower: { value: 7.1 },
-          instanceId: { value: instanceId }
-        });
-        shader.vertexShader = `
-            uniform float time;
-            uniform float shift;
-            uniform float noisePosScale;
-            uniform float noiseTimeScale;
-            uniform float noiseAmp1;
-            uniform float noiseAmp2;
-            uniform float noiseAmp3;
-            uniform float fresnelBias;
-            uniform float fresnelScale;
-            uniform float fresnelPower;
-            uniform float instanceId;
-
-            attribute vec3 altPosition;
-
-            varying vec3 vWorldPosition;
-            ${simplex4}
-            ${shader.vertexShader}
-          `.replace(
-          `#include <begin_vertex>`,
-          `#include <begin_vertex>
-          float t = time * noiseTimeScale;
-          vec3 pos1 = position;
-          float n1 = snoise4(vec4(normalize(pos1), t + instanceId));
-          float n3 = snoise4(vec4(normalize(pos1) * 2., t + instanceId));
-
-          pos1   += normalize(pos1) * (n1 * noiseAmp2 + n3 * noiseAmp3);
-          pos1.y += shift;
-
-          transformed = pos1;
-          vWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
-        `
-        );
-
-        shader.fragmentShader = `
-          uniform float fresnelBias;
-          uniform float fresnelScale;
-          uniform float fresnelPower;
-          uniform float time;
-
-          varying vec3 vWorldPosition;
-          ${shader.fragmentShader}
-        `;
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-          `#include <clipping_planes_fragment>`,
-          `#include <clipping_planes_fragment>
-            vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
-            float power = fresnelPower * dot(vec3(sin(-time) * 0.3, -0.5, 0.), vWorldPosition);
-            float fresnelFactor = fresnelBias + fresnelScale * pow(1.9 - dot(vNormal, viewDirection), power);
-          `
-        );
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-          `#include <dithering_fragment>`,
-          `
-            #include <dithering_fragment>
-            gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.99, 0.1, 0.), clamp(fresnelFactor, 0., 1.));
-          `
-        );
-      };
+      ///////////////////////
+      // Spheres
+      ///////////////////////
 
       const anim = { speed: 1.0 };
-
-      const sphereGeometry = new THREE.SphereGeometry(2.1, 100, 100);
-
       const spheresCount = 5;
       const spheres = [];
 
-      const getPointTexture = () => {
-        const canvas = document.createElement("canvas");
-        const canvasSize = 32;
-        const circleRadius = 10;
-        canvas.width = canvas.height = 2 * canvasSize;
-        const context = canvas.getContext("2d");
-
-        context.beginPath();
-        context.rect(0, 0, canvas.width, canvas.height);
-        context.fillStyle = "#000";
-        context.fill();
-
-        context.beginPath();
-        context.arc(
-          canvasSize,
-          canvasSize,
-          circleRadius,
-          0,
-          2 * Math.PI,
-          false
-        );
-        context.fillStyle = "#fff";
-        context.fill();
-
-        const texture = new THREE.Texture(canvas);
-        texture.needsUpdate = true; // 🔴 ОБЯЗАТЕЛЬНО
-
-        return texture;
-      };
-
-      const pointsMap = getPointTexture();
-
-      const POINTS_SIZE = 0.03 / dpr;
-      // const POINTS_SIZE = 1;
-
       for (let i = 0; i < spheresCount; i++) {
-        const pointsMaterial = new THREE.PointsMaterial({
-          size: POINTS_SIZE,
-          color: 0xff9d50,
-          // opacity: 0.0,
-          // transparent: true,
-          // alphaTest: 0.5,
-          // alphaMap: pointsMap,
-          // depthTest: true,
-          // depthWrite: true,
-          blending: THREE.AdditiveBlending,
-          onBeforeCompile: Points_onBeforeCompile(i)
-        });
-
-        const pointsMesh = new THREE.Points(pointsGeometry, pointsMaterial);
-
-        const sphereMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x7700000,
-          transparent: true,
-          metalness: 0.5,
-          roughness: 0.5,
-          opacity: 0,
-          side: THREE.DoubleSide,
-          onBeforeCompile: Sphere_onBeforeCompile(i)
-        });
-
-        const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        const sphere = new WobblingSphere(i);
+        scene.add(sphere);
 
         spheres.push({
-          pointsMesh,
-          sphereMesh
+          sphere
         });
-
-        scene.add(sphereMesh);
-        scene.add(pointsMesh);
       }
 
       updateSpheresRotation();
@@ -937,39 +767,39 @@
         [-4, 4, -2, 0.6]
       ];
 
+      const updatePointSize = () => {
+        const { lerp, clamp } = THREE.MathUtils;
+        const firstScreenMorph = clamp(gu.morph.value, 0, 1);
+
+        spheres.forEach((item, index) => {
+          const { sphere } = item;
+
+          sphere.material.size = lerp(
+            waveSettings.pointSize.value / dpr,
+            gu.pointSize.value / dpr,
+            firstScreenMorph
+          );
+        });
+      };
+
       const updateMorph = () => {
-        gu.morph.value = 0.0001 + (window.scrollY / window.innerHeight) * 2;
+        gu.morph.value = (window.scrollY / window.innerHeight) * 2;
         gu.scrollY.value = window.scrollY;
 
         const { lerp, clamp } = THREE.MathUtils;
         const firstScreenMorph = clamp(gu.morph.value, 0, 1);
         const secondScreenMorph = clamp(gu.morph.value - 4.0, 0, 1);
 
-        spheres.forEach((sphere, index) => {
-          const { sphereMesh, pointsMesh } = sphere;
+        spheres.forEach((item, index) => {
+          const { sphere } = item;
+
+          updatePointSize();
 
           if (index === 0) {
-            sphereMesh.visible = true;
-            pointsMesh.visible = true;
-
-            sphereMesh.material.opacity = lerp(
-              0,
-              0.75,
-              Math.pow(firstScreenMorph, 16)
-            );
-
-            pointsMesh.material.opacity = 1;
-
-            sphereMesh.scale.set(
-              lerp(0.9, 1, firstScreenMorph),
-              lerp(0.9, 1, firstScreenMorph),
-              lerp(0.9, 1, firstScreenMorph)
-            );
+            sphere.visible = true;
           } else {
             if (secondScreenMorph > 0) {
-              sphereMesh.visible = true;
-              pointsMesh.visible = true;
-
+              sphere.visible = true;
               const angle = (index / spheres.length) * Math.PI * 2;
 
               const [x, y, z, scale] = positions[index];
@@ -980,40 +810,23 @@
                 lerp(0, z, secondScreenMorph)
               );
 
-              sphereMesh.position.copy(position);
-              pointsMesh.position.copy(position);
+              sphere.position.copy(position);
 
               const initialScale = 0.9;
 
-              sphereMesh.scale.set(
-                lerp(initialScale, scale, secondScreenMorph),
-                lerp(initialScale, scale, secondScreenMorph),
-                lerp(initialScale, scale, secondScreenMorph)
-              );
-
-              sphereMesh.material.opacity = lerp(0, 0.75, secondScreenMorph);
-              pointsMesh.material.size = lerp(
-                0,
-                POINTS_SIZE * scale,
-                secondScreenMorph
-              );
-
-              pointsMesh.scale.set(
+              sphere.scale.set(
                 lerp(initialScale, scale, secondScreenMorph),
                 lerp(initialScale, scale, secondScreenMorph),
                 lerp(initialScale, scale, secondScreenMorph)
               );
             } else {
-              sphereMesh.visible = false;
-              pointsMesh.visible = false;
+              sphere.visible = false;
             }
           }
         });
 
         updateSpheresRotation();
       };
-
-      initPostprocessing();
 
       updateMorph();
 
@@ -1026,8 +839,9 @@
 
         const angle = -Math.PI * 0.5;
         const diff = Math.PI * 0.2;
-        const lightX = Math.sin(-gu.time.value * backgroundSettings.speed.value) *
-          backgroundSettings.amplitude.value
+        const lightX =
+          Math.sin(-gu.time.value * backgroundSettings.speed.value) *
+          backgroundSettings.amplitude.value;
         const angleRadians = Math.atan2(lightX, 1);
         const timeDiff = angleRadians;
 
@@ -1047,33 +861,7 @@
           1.5
         );
 
-        // Обновляем все параметры BokehShader
-        Object.keys(settings).forEach((key) => {
-          postprocessing.bokeh_uniforms[key].value = settings[key].value;
-        });
-
-        // Обновляем параметры камеры
-        postprocessing.bokeh_uniforms["znear"].value = camera.near;
-        postprocessing.bokeh_uniforms["zfar"].value = camera.far;
-
-        // render scene into texture
-        renderer.setRenderTarget(postprocessing.rtTextureColor);
-        renderer.clear();
         renderer.render(scene, camera);
-
-        // render depth into texture
-        scene.overrideMaterial = materialDepth;
-        renderer.setRenderTarget(postprocessing.rtTextureDepth);
-        renderer.clear();
-        renderer.render(scene, camera);
-        scene.overrideMaterial = null;
-
-        // render bokeh composite
-        renderer.setRenderTarget(null);
-        renderer.render(postprocessing.scene, postprocessing.camera);
-
-        // render bloom effect
-        // composer.render();
       }
       animate();
     </script>
