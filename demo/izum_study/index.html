@@ -325,6 +325,10 @@
             vertices.push(p.clone());
           }
 
+          vertices.sort((a, b) => {
+            return a.y - b.y;
+          });
+
           const [x, y, z, scale] = positions[instanceId];
 
           const g = new THREE.BufferGeometry()
@@ -358,12 +362,6 @@
 
           const getDropPos = (position) => {
             const max = Math.max(...position.slice(0, 3));
-
-            // return [
-            //   0,
-            //   1.5,
-            //   1,
-            // ]
 
             const getIntersectionOnSphere = (position) => {
               const [x, y, z] = position;
@@ -503,12 +501,7 @@
                   ? invCircle(x) * 2. 
                   : 1. + circle(pow(x, 1.5)) * 0.75;
 
-                // return 1. + invCircle(x) * 1.;
-
-                // return circleY;
-
                 float anim = abs(amp - 0.8);
-                // anim = amp;
 
                 return stemY;
               }
