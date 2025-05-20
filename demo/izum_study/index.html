@@ -230,6 +230,7 @@
         noiseDensity: { value: 3.9 },
         timeScale: { value: 0.5 },
         blurPower: { value: 0.5 },
+        sphereScale: { value: 1 },
       };
 
       const sphereOpacity = [
@@ -280,9 +281,17 @@
       sphereGroup.add(gu.timeScale, "value", 0.0, 1, 0.01).name("timeScale");
       sphereGroup.add(gu.blurPower, "value", 0.0, 10, 0.1).name("blurPower");
 
+      sphereGroup.add(gu.sphereScale, "value", 1, 2, 0.01).name("scale")
+        .onChange((value) => {
+          spheres[0].sphere.scale.set(value, value, value);
+        });
+
       const waveSettings = {
-        color: { value: [0.55, 0.06, 0.0125] },
+        color: { value: [0.88, 0.07, 0] },
         pointSize: { value: 0.18 },
+        noiseAmplitude: { value: 0.49 },
+        noiseDensity: { value: 2.4 },
+        timeScale: { value: 0.4 },
       };
 
       const waveGroup = gui.addFolder("Wave");
@@ -292,6 +301,10 @@
         .onChange((value) => {
           updatePointSize();
         });
+
+      waveGroup.add(waveSettings.noiseAmplitude, "value", 0.0, 1, 0.01).name("Noise Amplitude");
+      waveGroup.add(waveSettings.noiseDensity, "value", 0.0, 10, 0.1).name("Noise Density");
+      waveGroup.add(waveSettings.timeScale, "value", 0.0, 1, 0.01).name("Time Scale");
 
       class WobblingSphere extends THREE.Points {
         constructor(instanceId) {
@@ -394,10 +407,15 @@
             lightColor: gu.lightColor,
             mouseLightColor: gu.mouseLightColor,
             instanceId: { value: instanceId },
-            waveColor: waveSettings.color,
             radius: { value: 2 },
             noiseAmplitude: gu.noiseAmplitude,
             noiseDensity: gu.noiseDensity,
+            
+            waveColor: waveSettings.color,
+            waveNoiseAmplitude: waveSettings.noiseAmplitude,
+            waveNoiseDensity: waveSettings.noiseDensity,
+            waveTimeScale: waveSettings.timeScale,
+
             timeScale: gu.timeScale,
             blurPower: gu.blurPower,
             subdivision: { value: [pointsGeometry.parameters.widthSegments, pointsGeometry.parameters.heightSegments] }
@@ -426,9 +444,13 @@
               uniform vec3 colorIn;
               uniform vec3 colorCenter;
               uniform vec3 colorOut;
-              uniform vec3 waveColor;
-              
               uniform float radius;
+              
+              uniform vec3 waveColor;
+              uniform float waveNoiseAmplitude;
+              uniform float waveNoiseDensity;
+              uniform float waveTimeScale;
+
               uniform float noiseAmplitude;
               uniform float noiseDensity;
               uniform float timeScale;
@@ -458,11 +480,11 @@
               }
 
               vec3 getWavePos(vec3 p){
-                float moveTime = time * timeScale * 0.3;
-                float moiseTime = time * timeScale * 0.2;
+                float moveTime = time * waveTimeScale * 0.3;
+                float moiseTime = time * waveTimeScale * 0.2;
                 vec3 pos = vec3(p.x * 0.2 + moveTime, p.y, p.z * 0.5);
-                float wave = cnoise(vec4(pos * noiseDensity, moiseTime));
-                return p * (radius + wave * noiseAmplitude * 1.75);
+                float wave = cnoise(vec4(pos * waveNoiseDensity, moiseTime));
+                return p * (radius + wave * waveNoiseAmplitude);
               }
 
               float addLight(vec3 p, vec3 objectNormal, vec3 light, float power){
@@ -503,7 +525,8 @@
 
                 float anim = abs(amp - 0.8);
 
-                return stemY;
+                // return stemY;
+                return mix(stemY, circleY, smoothstep(0.5, 1.0, amp));
               }
 
               float linearInterpolation(float d, float t) {
@@ -523,7 +546,7 @@
                 } else {
                   // Конечная стадия - затухающий сталактит
                   float power = mix(0.5, 3.5, smoothstep(second, 1.0, t));
-                  float y = easeInOutQuad(pow(d, power)) * 7.;
+                  float y = easeInOutQuad(pow(d, power)) * 5.;
                   return y * (1. - t);
                 }
               }
