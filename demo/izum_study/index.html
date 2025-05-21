@@ -200,6 +200,7 @@
 
       renderer.setSize(width, height);
       renderer.setPixelRatio(dpr);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
       canvas.style.width = `100vw`;
       canvas.style.height = `100vh`;
 
@@ -287,10 +288,10 @@
         });
 
       const waveSettings = {
-        color: { value: [0.88, 0.07, 0] },
+        color: { value: [0.55, 0.06, 0.0125] },
         pointSize: { value: 0.18 },
-        noiseAmplitude: { value: 0.49 },
-        noiseDensity: { value: 2.4 },
+        noiseAmplitude: { value: 0.18 },
+        noiseDensity: { value: 2.6 },
         timeScale: { value: 0.4 },
       };
 
@@ -355,7 +356,13 @@
               .rotateX(-Math.PI * 0.65)
               .rotateY(0.15)
               .translate(0, 1, 0)
-            : new THREE.SphereGeometry(1, 250, 120);
+            : new THREE.SphereGeometry(1, 250, 120)
+              .scale(2, 2, 2)
+              .translate(
+                -positions[instanceId][0] * 0.5, 
+                -positions[instanceId][1] * 0.5, 
+                -positions[instanceId][2] * 0.5,
+              )
 
           pointsGeometry.computeTangents();
 
@@ -395,7 +402,7 @@
             colorCenter: gu.sphereColor2,
             colorOut: gu.fresnelColor,
             sphereOpacity: sphereOpacity[instanceId],
-            morph: instanceId === 0 ? gu.firstScreenMorph : { value: 1 },
+            morph: instanceId === 0 ? gu.firstScreenMorph : gu.secondScreenMorph,
             drops: { value: instanceId === 0 
               ? positions.slice(1, 4).map(getDropPos).flat()
               : [0, 0, 0] },
@@ -484,7 +491,7 @@
                 float moiseTime = time * waveTimeScale * 0.2;
                 vec3 pos = vec3(p.x * 0.2 + moveTime, p.y, p.z * 0.5);
                 float wave = cnoise(vec4(pos * waveNoiseDensity, moiseTime));
-                return p * (radius + wave * waveNoiseAmplitude);
+                return p * (radius + wave * waveNoiseAmplitude * 1.75);
               }
 
               float addLight(vec3 p, vec3 objectNormal, vec3 light, float power){
@@ -517,7 +524,7 @@
               float droponStem(float x, float amp) {
                 float g = 0.000001;
                 float d = mod(position.x, g);
-                float power = mix(1., 0.2, amp);
+                float power = mix(1., 0.5, amp);
                 float stemY = easeInOutQuad(pow(x, power)) * 2.5;
                 float circleY = d > g * 0.5
                   ? invCircle(x) * 2. 
@@ -525,8 +532,8 @@
 
                 float anim = abs(amp - 0.8);
 
-                // return stemY;
-                return mix(stemY, circleY, smoothstep(0.5, 1.0, amp));
+                return stemY;
+                // return mix(stemY, circleY, smoothstep(0.5, 1.0, amp));
               }
 
               float linearInterpolation(float d, float t) {
@@ -545,8 +552,8 @@
                   return y;
                 } else {
                   // Конечная стадия - затухающий сталактит
-                  float power = mix(0.5, 3.5, smoothstep(second, 1.0, t));
-                  float y = easeInOutQuad(pow(d, power)) * 5.;
+                  float power = mix(0.5, 7.5, smoothstep(second, 1.0, t));
+                  float y = easeInOutQuad(pow(d, power)) * 7.;
                   return y * (1. - t);
                 }
               }
@@ -562,8 +569,15 @@
 
                 vec3 direction = normalize(modelPosition);
 
-                float d = dot(p0 + 1.5, vec3(0., 1., 0.)) / sqrt(15.);
-                d = sqrt(1. - (1. - d*d)) + dot(p1, vec3(0., 1., 0.)) * 0.01;
+                float d = instanceId == 0.0 
+                  ? dot(p0 + 1.5, vec3(0., 1., 0.)) / sqrt(15.)
+                  // : (p0.z - 1.5) / sqrt(15.)
+                  : dot(-p0 + 2.5, vec3(0., 0., 1.)) / sqrt(15.)
+                  ;
+                d = instanceId == 0.0
+                  ? sqrt(1. - (1. - d*d)) + dot(p1, vec3(0., 1., 0.)) * 0.01
+                  : sqrt(1. - (1. - d*d)) + dot(p1, vec3(0., 1., 0.)) * 0.01
+                  ;
                 float f = clamp(morph * 2. - d, 0., 1.);
 
                 transformed = mix(p1, p0, f);
@@ -571,6 +585,7 @@
                 mat3 rotationMatrix = mat3(modelViewMatrix);
                 vec3 rotatedPosition = rotationMatrix * transformed;
                 vec4 worldPos = vec4(rotatedPosition, 1.0);
+                float dropAmount = 0.;
 
                 // Капли
                 for(int i = 0; i < 4; i++) {
@@ -588,7 +603,12 @@
                         float angle = pow(1.0 - dist / radius, 0.5 + pow(dropMorph, 5.5) * 21.);
 
                         // transformed.z += sin(angle) * clamp(sin(t * 2.5), 0., 1.) * 3.;
-                        transformed.z += linearInterpolation((1. - dist / radius), t);
+                        dropAmount = linearInterpolation((1. - dist / radius), t) * 0.25;
+                        transformed.z += dropAmount;
+                        transformed.x += dot(dropPos, vec3(1., 0., 0.)) * dropAmount;
+                        transformed.y += dot(dropPos, vec3(0., 1., 0.)) * dropAmount;
+                        // transformed.y = transformed.y + (rotatedPosition.y + transformed.y) * dropAmount * 0.01;
+                        // transformed.x = transformed.x + (rotatedPosition.x + transformed.x) * dropAmount * 0.01;
                     }
                 }
 
@@ -635,17 +655,25 @@
                 // FINAL COLOR
                 
                 vec3 color = mix(waveColor, sphereColor, f);
-                vColor = mix(color, colorOut, clamp(pow(1. - fadeOut, blurPower), 0., 1.));
+                vColor = mix(color, colorOut, clamp(pow(1. - fadeOut, 5.5), 0., 1.));
 
                 // LIGHTS
 
-                vColor += mouseLightColor * addLight(mvPos.xyz, objectNormal, light, 5.0);
-                vColor += lightColor * addLight(mvPos.xyz, objectNormal, vec3(0., -3., -5.), 10.0);
+                if (dropAmount < 0.5) {
+                  vColor += mouseLightColor * addLight(mvPos.xyz, objectNormal, light, 5.0);
+                  vColor += lightColor * addLight(mvPos.xyz, objectNormal, vec3(0., -3., -5.), 10.0);
+                }
               `
               )
               .replace(
                 `gl_PointSize = size;`,
-                `gl_PointSize = size * mix(1., fadeOutMaxSize, 1. - fadeOut) * modelScale;`
+                `
+                  float fScale = instanceId == 0.0 
+                    ? modelScale
+                    : mix(modelScale * 3., modelScale, morph);
+
+                  gl_PointSize = size * mix(1., fadeOutMaxSize, 1. - fadeOut) * fScale;
+                `
               );
 
             shader.fragmentShader = `
@@ -661,7 +689,6 @@
               if (fadeOut < 0. || uvLen > 0.5) discard;
               vec4 diffuseColor = vec4( diffuse, opacity );
               
-              float alphaLim = 0.25 + (pow(1. - fadeOut, 4.)) * 0.75;
               float fa = 1. - smoothstep(0.25, 1., uvLen * 4.);
               
               diffuseColor.a = fa * (0.25 + 0.75 *  pow(fadeOut, 4.)) * sphereOpacity;
@@ -954,7 +981,7 @@
 
               // sphere.material.opacity = lerp(0, 1, secondScreenMorph);
 
-              sphereOpacity[index].value = smoothstep(secondScreenMorph, 0.5, 0.7);
+              sphereOpacity[index].value = smoothstep(secondScreenMorph, 0.5, 1.0);
 
             } else {
               sphere.visible = false;
