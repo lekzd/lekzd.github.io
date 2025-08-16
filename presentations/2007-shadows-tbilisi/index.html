@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Why shadows in browser looks like from 2007?</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./fonts/fira_code.css">
+    <link rel="stylesheet" href="https://highlightjs.org/static/demo/styles/monokai-sublime.css">
+    <link rel="stylesheet" href="shower/themes/ribbon/styles/styles.css">
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./highlight.pack.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        .shower {
+            --slide-ratio: calc(16 / 9);
+        }
+
+        .title-shadow {
+            text-shadow: 
+                3px 0px 2px black,
+                3px 3px 2px black,
+                0px 3px 2px black,
+                -3px 3px 2px black,
+                -3px 0px 2px black,
+                -3px -3px 2px black,
+                0px -3px 2px black,
+                3px -3px 2px black;
+        }
+
+        .slide-cover:before {
+            content: "";
+            display: block;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            z-index: -1;
+            background-color: rgba(0, 0, 0, 0.9);
+            background-image: 
+                linear-gradient(135deg, transparent 50%, rgba(255, 0, 234, 0.4) 100%),
+                linear-gradient(45deg, transparent 50%, rgba(255, 0, 119, 0.6) 100%),
+                linear-gradient(275deg, transparent 50%, rgba(115, 0, 255, 0.25) 100%);
+        }
+    </style>
+</head>
+
+<body class="shower list" theme="dark">
+
+    <header class="caption">
+        <h1>Why shadows in browser look like from 2007?</h1>
+    </header>
+
+    <section class="slide slide-cover">
+        <br>
+        <h2 class="text-center title-shadow double_line">
+            <span class="white">Why shadows in browser look like from 2007?</span>
+        </h2>
+    </section>
+
+    <section class="slide">
+        <br>
+        <div class="flex-row align-center">
+            <div class="mr-50">
+                <img src="./pictures/me_small.png" alt="">
+            </div>
+            <div class="ml-50">
+                <h2 class="">Aleksandr Korotaev</h2>
+                <ul class="blank size_28">
+                    <li class="commented next">Saint-Petersburg</li>
+                    <li class="commented next">love graphics</li>
+                    <li class="yellow next">7 years with WebGL</li>
+                    <li class="commented next"><a href="https://t.me/korotaev_to_hard" target="_blank">t.me/korotaev_to_hard</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <h2>My own context</h2>
+        <p class="size_40">
+            Experience with non-standard shadows for WebGL and React Native.
+        </p>
+    </section>
+
+    <section class="slide">
+        <h2>My own context</h2>
+        <p class="size_40">
+            Customers reaching out to me when standard APIs didn't work as well.
+        </p>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80">Why 2007?</h2>
+        <div class="text-center title-shadow">part 1 <span class="grey">/ 4</span></div>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/2007.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Web (CSS)</h2>
+        <p class="size_40">
+            In 2007, work on box-shadow in CSS started (released in 2010)
+        </p>
+        <p class="">
+            <a href="https://drafts.csswg.org/css-backgrounds/#box-shadow">
+                CSS Backgrounds and Borders Module Level 3 <br># box-shadow
+            </a>
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/box-shadow-css-property.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Web (CSS)</h2>
+        <pre>
+            <code>box-shadow:</code>
+            <code>    inset 0 -3em 3em rgba(0, 0, 0, 0.1),</code>
+            <code>    0 0 0 2px rgb(255, 255, 255),</code>
+            <code>    0.3em 0.3em 1em rgba(0, 0, 0, 0.3);</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <h2>iOS</h2>
+        <ul class="size_40">
+            <li>2007: UIKit 🦕 🦖</li>
+            <li>2017: Swift UI 🤸‍♂️</li>
+        </ul>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/ios_shadows.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>iOS (Swift UI)</h2>
+        <pre>
+            <code>Element</code>
+            <code>  .shadow(</code>
+            <code>    color: .primary,</code>
+            <code>    radius: CGFloat(radius),</code>
+            <code>    x: CGFloat(offset),</code>
+            <code>    y: CGFloat(offset),</code>
+            <code>  )</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <h2>Android</h2>
+        <ul class="size_40">
+            <li>2008: XML-markup 🦕 🦖</li>
+            <li>2011: Material Design 🚀</li>
+            <li>2018: Jetpack Compose 🤸‍♂️</li>
+        </ul>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/elevation.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Android (&lt; 9)</h2>
+        <pre>
+            <code>&lt;View</code>
+            <code>  android:elevation="2dp"</code>
+            <code>&gt;</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <h2>Android (Jetpack Compose)</h2>
+        <pre>
+            <code>&lt;View</code>
+            <code>  android:elevation="2dp"</code>
+            <code>  android:shape="CircleShape | RectangleShape | RoundedCornerShape"</code>
+            <code>  android:clip="true | false"</code>
+            <code>  android:ambientColor="@android:color/primary"</code>
+            <code>  android:spotColor="@android:color/secondary"</code>
+            <code>&gt;</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/jetpack-compose.png" alt="" class="cover">
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80"><span class="white">Issues</span></h2>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/neumorphism.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/blur-comparision.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Issue</h2>
+        <p class="size_40">
+            Making the same UI-kit <br />
+            <span class="yellow">for 3 platforms</span> <br />
+            is hard.
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/lifted_corners.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Issue</h2>
+        <p class="size_40">
+            Shadows in 2025 still <br />
+            <span class="yellow">look «flat» and restricted</span>, <br />
+            especially on Android and iOS.
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/drop-shadow-filter.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Issue</h2>
+        <p class="size_40">
+            Shadows as a filter are supported <br />
+            <span class="yellow">in browsers ONLY</span>.
+        </p>
+    </section>
+
+    <section class="slide">
+        <br>
+        <p class="size_40 text-center">
+            Shadows for every platform — it's a compromise between design and performance from 15 years ago.
+        </p>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80">Why?</h2>
+        <div class="text-center title-shadow">part 2 <span class="grey">/ 4</span></div>
+    </section>
+
+    <section class="slide">
+        <br>    
+        <br>    
+        <br>
+        <h2 class="text-center">What is UI made from?</h2>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/block_1.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>What is a block made from?</h2>
+        <ol class="size_40">
+            <li>Content area</li>
+            <li>Border</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/block_2.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/block_3.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>What is a block made from?</h2>
+        <ol class="size_32">
+            <li>Content area</li>
+            <li class="red">Blur</li>
+            <li>Border</li>
+            <li class="red">Blur</li>
+            <li>Shadow <span class="red">(blurred)</span></li>
+        </ol>
+    </section>
+    
+    <section class="slide">
+        <br>    
+        <br>    
+        <h2 class="text-center">How is a block drawn?</h2>
+        <p class="grey text-center">
+            Let's look at the GPU pipeline
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/rendering-pipeline.png" alt="" class="cover" style="filter: invert(1);">
+    </section>
+
+    <section class="slide">
+        <br>    
+        <br>    
+        <h2 class="text-center">How is a block drawn?</h2>
+        <p class="grey text-center">
+            Let's take a look at the Tech Assignment
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/box-bevels.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <br>    
+        <h2 class="text-center"><span class="grey">Solution 1:</span></h2>
+        <h2 class="text-center double_line">Assembly from triangles</h2>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/rounded-box-triangles.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Triangle cons</h2>
+        <ol class="size_40">
+            <li>Grid assembling</li>
+            <li>Grid rebuilding</li>
+            <li>Blurring</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/anti-aliasing.png" alt="">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/blur.png" class="cover" alt="">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/gausian-blur.png" alt="">
+    </section>
+
+    <section class="slide">
+        <br>    
+        <h2 class="text-center"><span class="grey">Solution 2:</span></h2>
+        <h2 class="text-center double_line">Nine slices</h2>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/9-slice.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/9-patch.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <h2>Who uses Nine slices?</h2>
+        <ol class="size_40">
+            <li>Android</li>
+            <li>Old iOS</li>
+            <li>CSS border-image</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <h2>Nine slices cons</h2>
+        <ol class="size_40">
+            <li>Texture for each new shape</li>
+            <li>No dynamics</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <br>    
+        <h2 class="text-center"><span class="grey">Solution 3:</span></h2>
+        <h2 class="text-center double_line">SDF</h2>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <p class="size_40 text-center">
+            <span class="red">SDF</span> — this is a function that returns the distance to the closest object edge.
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/sdf.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <p class="size_40 text-center">
+            <span class="blue">-1 — inside</span>
+            <br>
+            <span class="yellow">0 — on edge</span>
+            <br>
+            <span class="red">1 — outside</span>
+        </p>
+    </section>
+
+    <section class="slide">
+        <h2>Who uses SDF?</h2>
+        <ol class="size_40">
+            <li>Browsers</li>
+            <li>iOS</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <h2>SDF cons</h2>
+        <ol class="size_40">
+            <li>Hard algorithms</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <h2>SDF pros</h2>
+        <ol class="size_40">
+            <li>Memory</li>
+            <li>Speed</li>
+            <li>Sharpness</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <h2>Why SDF?</h2>
+        <ol class="size_40">
+            <li>Shaders assembled at runtime</li>
+            <li>Can generate custom ones</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <br>
+        <pre>
+            <code>float sdRoundedBox( in vec2 p, in vec2 b, in vec4 r )</code>
+            <code>{</code>
+            <code>    r.xy = (p.x>0.0)?r.xy : r.zw;</code>
+            <code>    r.x  = (p.y>0.0)?r.x  : r.y;</code>
+            <code>    vec2 q = abs(p)-b+r.x;</code>
+            <code>    return min(max(q.x,q.y),0.0) + length(max(q,0.0)) - r.x;</code>
+            <code>}</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/sdf.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <h2 class="text-center">CSS Border Module 4</h2>
+        <div class="text-center size_40"><span class="yellow">corner-shape</span>: round;</div>
+        <div class="text-center size_40"><span class="yellow">corner-shape</span>: bevel;</div>
+        <div class="text-center size_40"><span class="yellow">corner-shape</span>: scoop;</div>
+        <div class="text-center size_40"><span class="yellow">corner-shape</span>: notch;</div>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/corner-shape.mp4" type="video/mp4">
+        </video>
+    </section>
+
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/css-popup.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80">There is some hope</h2>
+        <div class="text-center title-shadow">part 3 <span class="grey">/ 4</span></div>
+    </section>
+
+    <section class="slide">
+        <br>    
+        <h2 class="text-center"><span class="grey">Solution 4:</span></h2>
+        <h2 class="text-center double_line">Vector Feathering</h2>
+    </section>
+    
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/feathering.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <p class="size_40 text-center">
+            <span class="red">Vector Feathering</span> — like SDF but with vectors instead of distance.
+        </p>
+    </section>
+
+    <section class="slide">
+        <h2>Rive</h2>
+        <ol class="size_40">
+            <li>Browsers</li>
+            <li>iOS</li>
+            <li>Android</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/rive-interface.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80">Key takeaways</h2>
+        <div class="text-center title-shadow">part 4 <span class="grey">/ 4</span></div>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <div class="text-center size_40">In 2007, <span class="red">the easiest</span> solutions were chosen</div>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <div class="text-center size_40">Browsers and OS are <span class="red">stuck in compromise</span> between ease and functionality.</div>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <div class="text-center size_40"><span class="red">Shadows</span> are not just "black blurred rects". They're an <span class="red">important</span> part of design</div>
+    </section>
+
+
+
+    <section class="slide slide-cover">
+        <div class="flex-row justify-center" style="gap: 20px;">
+            <div>
+                <img width="400" style="" src="./pictures/channel_link.png" alt="">
+            </div>
+            <div>
+                <img width="400" style="" src="./pictures/qr.png" alt="">
+            </div>
+        </div>
+    </section>
+
+
+    <footer class="badge">
+        <a href="https://github.com/shower/shower">Fork me on GitHub</a>
+    </footer>
+
+    <div class="progress"></div>
+
+    <script src="shower/shower.js"></script>
+    <!-- Copyright © 2020 Yours Truly, Famous Inc. -->
+
+</body>
+
+</html>
