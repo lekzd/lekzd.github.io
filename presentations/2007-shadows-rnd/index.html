@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Почему тени в браузере выглядят как из 2007-го?</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./fonts/fira_code.css">
+    <link rel="stylesheet" href="https://highlightjs.org/static/demo/styles/monokai-sublime.css">
+    <link rel="stylesheet" href="shower/themes/ribbon/styles/styles.css">
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./highlight.pack.js"></script>
+    <style>
+        .shower {
+            --slide-ratio: calc(16 / 9);
+        }
+
+        .title-shadow {
+            text-shadow: 
+                3px 0px 2px black,
+                3px 3px 2px black,
+                0px 3px 2px black,
+                -3px 3px 2px black,
+                -3px 0px 2px black,
+                -3px -3px 2px black,
+                0px -3px 2px black,
+                3px -3px 2px black;
+        }
+
+        .slide-cover:before {
+            content: "";
+            display: block;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            z-index: -1;
+            background-color: rgba(0, 0, 0, 0.9);
+            background-image: 
+                linear-gradient(135deg, transparent 50%, rgba(255, 0, 234, 0.4) 100%),
+                linear-gradient(45deg, transparent 50%, rgba(255, 0, 119, 0.6) 100%),
+                linear-gradient(275deg, transparent 50%, rgba(115, 0, 255, 0.25) 100%);
+        }
+    </style>
+</head>
+
+<body class="shower list" theme="dark">
+
+    <header class="caption">
+        <h1>Почему тени в браузере выглядят как из 2007-го?</span></h1>
+    </header>
+
+    <section class="slide slide-cover">
+        <br>
+        <h2 class="text-center title-shadow double_line">
+            <span class="white">Почему тени в браузере выглядят как из 2007-го?</span>
+        </h2>
+    </section>
+
+    <section class="slide">
+        <br>
+        <div class="flex-row align-center">
+            <div class="mr-50">
+                <img src="./pictures/me_small.png" alt="">
+            </div>
+            <div class="ml-50">
+                <h2 class="">Александр Коротаев</h2>
+                <ul class="blank size_28">
+                    <li class="commented next">Санкт-Петербург</li>
+                    <li class="commented next">люблю графику</li>
+                    <li class="yellow next">7 лет с WebGL</li>
+                    <li class="commented next"><a href="https://t.me/korotaev_to_hard" target="_blank">t.me/korotaev_to_hard</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <h2>Личный контекст</h2>
+        <p class="size_40">
+            Опыт реализации нестандартных теней в WebGL и React Native.
+        </p>
+    </section>
+
+    <section class="slide">
+        <h2>Личный контекст</h2>
+        <p class="size_40">
+            Ко мне приходят с задачами когда стандартные инструменты не подходят.
+        </p>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80">Почему 2007?</h2>
+        <div class="text-center title-shadow">часть 1 <span class="grey">/ 4</span></div>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/2007.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Web (CSS)</h2>
+        <p class="size_40">
+            В 2007 году началась работа над box-shadow в CSS (выпущен в 2010)
+        </p>
+        <p class="">
+            <a href="https://drafts.csswg.org/css-backgrounds/#box-shadow">
+                CSS Backgrounds and Borders Module Level 3 <br># box-shadow
+            </a>
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/box-shadow-css-property.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Web (CSS)</h2>
+        <pre>
+            <code>box-shadow:</code>
+            <code>    inset 0 -3em 3em rgba(0, 0, 0, 0.1),</code>
+            <code>    0 0 0 2px rgb(255, 255, 255),</code>
+            <code>    0.3em 0.3em 1em rgba(0, 0, 0, 0.3);</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <h2>iOS</h2>
+        <ul class="size_40">
+            <li>2007: UIKit 🦕 🦖</li>
+            <li>2017: Swift UI 🤸‍♂️</li>
+        </ul>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/ios_shadows.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>iOS (Swift UI)</h2>
+        <pre>
+            <code>Element</code>
+            <code>  .shadow(</code>
+            <code>    color: .primary,</code>
+            <code>    radius: CGFloat(radius),</code>
+            <code>    x: CGFloat(offset),</code>
+            <code>    y: CGFloat(offset),</code>
+            <code>  )</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <h2>Android</h2>
+        <ul class="size_40">
+            <li>2008: XML-макеты 🦕 🦖</li>
+            <li>2011: Material Design 🚀</li>
+            <li>2018: Jetpack Compose 🤸‍♂️</li>
+        </ul>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/elevation.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Android (&lt; 9)</h2>
+        <pre>
+            <code>&lt;View</code>
+            <code>  android:elevation="2dp"</code>
+            <code>&gt;</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <h2>Android (Jetpack Compose)</h2>
+        <pre>
+            <code>Box(modifier = Modifier</code>
+            <code>  .shadow(</code>
+            <code>     elevation = 2.dp,</code>
+            <code>     shape = CircleShape, // или RoundedCornerShape(8.dp)</code>
+            <code>     ambientColor = MaterialTheme.colorScheme.primary,</code>
+            <code>     spotColor = MaterialTheme.colorScheme.secondary,</code>
+            <code>     clip = true,</code>
+            <code>))</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/jetpack-compose.png" alt="" class="cover">
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80"><span class="white">Проблемы</span></h2>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/neumorphism.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/blur-comparision.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Проблема</h2>
+        <p class="size_40">
+            Реализовать одинаковый интерфейс <br />
+            <span class="yellow">на 3 платформы одновременно</span> <br />
+            это сложно.
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/lifted_corners.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Проблема</h2>
+        <p class="size_40">
+            Тени в 2025 году всё ещё <br />
+            <span class="yellow">выглядят «плоскими» и ограниченными</span>, <br />
+            особенно на Android и iOS.
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/drop-shadow-filter.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Проблема</h2>
+        <p class="size_40">
+            Тени в виде фильтра поддерживаются <br />
+            <span class="yellow">ТОЛЬКО в браузере</span>.
+        </p>
+    </section>
+
+    <section class="slide">
+        <br>
+        <p class="size_40 text-center">
+            Тени на всех платформах — это компромисс между дизайном и производительностью 15-летней давности.
+        </p>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80">Почему все так?</h2>
+        <div class="text-center title-shadow">часть 2 <span class="grey">/ 4</span></div>
+    </section>
+
+    <section class="slide">
+        <br>    
+        <br>    
+        <br>    
+        <h2 class="text-center">Из чего состоит UI?</h2>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/block_1.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Из чего состоит блок?</h2>
+        <ol class="size_40">
+            <li>Контентная область</li>
+            <li>Контур</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/block_2.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/block_3.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Из чего состоит блок?</h2>
+        <ol class="size_32">
+            <li>Контентная область</li>
+            <li class="red">Сглаживание</li>
+            <li>Контур</li>
+            <li class="red">Сглаживание</li>
+            <li>Тень <span class="red">(размытая)</span></li>
+        </ol>
+    </section>
+    
+    <section class="slide">
+        <br>    
+        <br>    
+        <h2 class="text-center">Как рисуется блок?</h2>
+        <p class="grey text-center">
+            рассмотрим GPU pipeline
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/rendering-pipeline.png" alt="" class="cover" style="filter: invert(1);">
+    </section>
+
+    <section class="slide">
+        <br>    
+        <br>    
+        <h2 class="text-center">Как рисуется блок?</h2>
+        <p class="grey text-center">
+            рассмотрим ТЗ для реализации
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/box-bevels.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <br>    
+        <h2 class="text-center"><span class="grey">Способ 1:</span></h2>
+        <h2 class="text-center double_line">Cобираем все из треугольников</h2>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/rounded-box-triangles.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <h2>Минусы треугольников</h2>
+        <ol class="size_40">
+            <li>Нужно строить сетку</li>
+            <li>Перестраивать сетку</li>
+            <li>Сглаживание</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/anti-aliasing.png" alt="">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/blur.png" class="cover" alt="">
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/gausian-blur.png" alt="">
+    </section>
+
+    <section class="slide">
+        <br>    
+        <h2 class="text-center"><span class="grey">Способ 2:</span></h2>
+        <h2 class="text-center double_line">Nine slices</h2>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/9-slice.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/9-patch.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <h2>Кто использует Nine slices</h2>
+        <ol class="size_40">
+            <li>Android</li>
+            <li>Старые версии iOS</li>
+            <li>CSS border-image</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <h2>Минусы Nine slices</h2>
+        <ol class="size_40">
+            <li>Текстура на каждую новую форму</li>
+            <li>Нет динамики</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <br>    
+        <h2 class="text-center"><span class="grey">Способ 3:</span></h2>
+        <h2 class="text-center double_line">SDF</h2>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <p class="size_40 text-center">
+            <span class="red">SDF</span> — это функция, которая возвращает расстояние до ближайшей границы объекта.
+        </p>
+    </section>
+
+    <section class="slide">
+        <img src="./pictures/sdf.png" alt="" class="cover">
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <p class="size_40 text-center">
+            <span class="blue">-1 — внутри объекта</span>
+            <br>
+            <span class="yellow">0 — на границе</span>
+            <br>
+            <span class="red">1 — снаружи</span>
+        </p>
+    </section>
+
+    <section class="slide">
+        <h2>Кто использует SDF</h2>
+        <ol class="size_40">
+            <li>Браузеры</li>
+            <li>iOS</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <h2>Минусы SDF</h2>
+        <ol class="size_40">
+            <li>Сложные алгоритмы</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <h2>Плюсы SDF</h2>
+        <ol class="size_40">
+            <li>Память</li>
+            <li>Скорость</li>
+            <li>Четкость</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <h2>Почему SDF?</h2>
+        <ol class="size_40">
+            <li>Шейдеры компилируются в рантайме</li>
+            <li>Можно сгенерировать свой</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <br>
+        <pre>
+            <code>float sdRoundedBox( in vec2 p, in vec2 b, in vec4 r )</code>
+            <code>{</code>
+            <code>    r.xy = (p.x>0.0)?r.xy : r.zw;</code>
+            <code>    r.x  = (p.y>0.0)?r.x  : r.y;</code>
+            <code>    vec2 q = abs(p)-b+r.x;</code>
+            <code>    return min(max(q.x,q.y),0.0) + length(max(q,0.0)) - r.x;</code>
+            <code>}</code>
+        </pre>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/sdf.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <h2 class="text-center">CSS Border Module 4</h2>
+        <div class="text-center size_40"><span class="yellow">corner-shape</span>: round;</div>
+        <div class="text-center size_40"><span class="yellow">corner-shape</span>: bevel;</div>
+        <div class="text-center size_40"><span class="yellow">corner-shape</span>: scoop;</div>
+        <div class="text-center size_40"><span class="yellow">corner-shape</span>: notch;</div>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/corner-shape.mp4" type="video/mp4">
+        </video>
+    </section>
+
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/css-popup.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80">Но есть надежда</h2>
+        <div class="text-center title-shadow">часть 3 <span class="grey">/ 4</span></div>
+    </section>
+
+    <section class="slide">
+        <br>    
+        <h2 class="text-center"><span class="grey">Способ 4:</span></h2>
+        <h2 class="text-center double_line">Vector Feathering</h2>
+    </section>
+    
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/feathering.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <p class="size_40 text-center">
+            <span class="red">Vector Feathering</span> — когда градиент задается не дистанцией, а вектором.
+        </p>
+    </section>
+
+    <section class="slide">
+        <h2>Rive</h2>
+        <ol class="size_40">
+            <li>Браузеры</li>
+            <li>iOS</li>
+            <li>Android</li>
+        </ol>
+    </section>
+
+    <section class="slide">
+        <video controls class="cover" muted autoplay loop>
+            <source src="./pictures/rive-interface.mov.mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <section class="slide slide-cover">
+        <br>
+        <br>
+        <h2 class="text-center title-shadow size_80">Выводы</h2>
+        <div class="text-center title-shadow">часть 4 <span class="grey">/ 4</span></div>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <div class="text-center size_40">На момент 2007 были выбраны самые <span class="red">простые</span> решения</div>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <div class="text-center size_40">Браузеры и ОС <span class="red">застряли в компромиссе</span> между простотой и гибкостью.</div>
+    </section>
+
+    <section class="slide">
+        <br>
+        <br>
+        <div class="text-center size_40">Тени — это не просто «размытый чёрный прямоугольник». Это важная часть дизайна</div>
+    </section>
+
+
+
+    <section class="slide slide-cover">
+        <div class="flex-row justify-center" style="gap: 20px;">
+            <div>
+                <img width="400" style="" src="./pictures/channel_link.png" alt="">
+            </div>
+        </div>
+    </section>
+
+
+    <footer class="badge">
+        <a href="https://github.com/shower/shower">Fork me on GitHub</a>
+    </footer>
+
+    <div class="progress"></div>
+
+    <script>
+
+        // hljs.registerLanguage('kotlin', kotlin)
+        document.querySelectorAll('pre').forEach(el => {
+            hljs.highlightElement(el)
+        })
+    </script>
+
+    <script src="shower/shower.js"></script>
+    <!-- Copyright © 2020 Yours Truly, Famous Inc. -->
+
+</body>
+
+</html>
